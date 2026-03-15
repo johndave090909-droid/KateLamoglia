@@ -281,9 +281,12 @@ function PortfolioSection({ sectionRefs, content, isMobile }: {
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
         <p style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.22em', color: GOLD, marginBottom: '0.8rem', textAlign: 'center' }}>MY WORK</p>
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? '2rem' : '2.8rem', fontWeight: 400, textAlign: 'center', margin: '0 0 0.5rem' }}>Selected Projects</h2>
-        <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#aaa', letterSpacing: '0.08em', margin: '0 0 0.4rem' }}>Drag to explore</p>
+        {content.portfolio.description ? (
+          <p style={{ textAlign: 'center', fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? '1rem' : '1.1rem', color: '#666', lineHeight: 1.7, maxWidth: '600px', margin: '0.6rem auto 0' }}>{content.portfolio.description}</p>
+        ) : null}
+        <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#aaa', letterSpacing: '0.08em', margin: '0.5rem 0 0' }}>Drag to explore</p>
         {items.length > 0 && (
-          <p style={{ textAlign: 'center', fontSize: '0.72rem', color: GOLD, fontWeight: 600, letterSpacing: '0.14em', margin: 0 }}>{items.length} {items.length === 1 ? 'PROJECT' : 'PROJECTS'}</p>
+          <p style={{ textAlign: 'center', fontSize: '0.72rem', color: GOLD, fontWeight: 600, letterSpacing: '0.14em', margin: '0.3rem 0 0' }}>{items.length} {items.length === 1 ? 'PROJECT' : 'PROJECTS'}</p>
         )}
       </div>
       {items.length > 0 && <MarqueeStrips items={items} isMobile={isMobile} />}
@@ -310,7 +313,10 @@ function CaseStudySection({ sectionRefs, content, isMobile }: {
       style={{ padding: isMobile ? '60px 5%' : '100px 8%', backgroundColor: CREAM }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
         <p style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.22em', color: GOLD, marginBottom: '0.8rem', textAlign: 'center' }}>FEATURED WORK</p>
-        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? '2rem' : '2.8rem', fontWeight: 400, textAlign: 'center', margin: '0 0 2rem' }}>Case Studies</h2>
+        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? '2rem' : '2.8rem', fontWeight: 400, textAlign: 'center', margin: '0 0 0.8rem' }}>Case Studies</h2>
+        {(content as any).caseStudiesDescription ? (
+          <p style={{ textAlign: 'center', fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? '1rem' : '1.1rem', color: '#666', lineHeight: 1.7, maxWidth: '600px', margin: '0 auto 1.5rem' }}>{(content as any).caseStudiesDescription}</p>
+        ) : <div style={{ marginBottom: '1.5rem' }} />}
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', marginBottom: '1.5rem' }}>
           {items.map((cs, i) => (

@@ -31,8 +31,9 @@ export function useContent() {
           },
           hero: { ...defaultContent.hero, ...(data.hero ?? {}) },
           about: { ...defaultContent.about, ...(data.about ?? {}) },
-          portfolio: { ...defaultContent.portfolio, ...(data.portfolio ?? {}) },
+          portfolio: { ...defaultContent.portfolio, ...(data.portfolio ?? {}), items: (data.portfolio as any)?.items ?? defaultContent.portfolio.items },
           recommendations: { ...defaultContent.recommendations, ...(data.recommendations ?? {}) },
+          caseStudiesDescription: (data as any)?.caseStudiesDescription ?? defaultContent.caseStudiesDescription,
           caseStudies: (data as any)?.caseStudies ?? defaultContent.caseStudies,
           contact: {
             ...defaultContent.contact,

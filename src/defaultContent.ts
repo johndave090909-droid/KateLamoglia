@@ -100,6 +100,7 @@ export const defaultContent = {
     skills: ['Brand Strategy', 'Content Marketing', 'Social Media', 'Consumer Research', 'Campaign Planning', 'Copywriting', 'Adobe Creative Suite', 'Canva', 'Google Analytics', 'Event Marketing', 'PR & Media Relations', 'Luxury Brand Management'],
   },
   portfolio: {
+    description: '',
     items: [
       { title: 'Vogue PH Digital Campaign', tag: 'Social Media', img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&q=80', link: '' },
       { title: 'Luxury Brand Activation', tag: 'Event Marketing', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&q=80', link: '' },
@@ -116,6 +117,7 @@ export const defaultContent = {
       { name: 'Carlo Mendez', role: 'Brand Director, Ayala Malls', quote: "She consistently delivers thoughtful, data-backed recommendations. Her consumer research internship output exceeded expectations for a student her level.", link: '' },
     ],
   },
+  caseStudiesDescription: '',
   caseStudies: [
     { label: 'Ciao Casa', file: '/CIAO CASA PPTX.pdf' },
     { label: 'Pure Pour', file: '/Empower your dream - PURE POUR.pdf' },

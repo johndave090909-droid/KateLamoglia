@@ -126,6 +126,12 @@ export default function AdminPanel({ content, onSave, onClose }: Props) {
 
   const renderPortfolio = () => (
     <div>
+      <div style={{ marginBottom: '1.2rem' }}>
+        <label style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: '#888' }}>DESCRIPTION (shown below section title)</label>
+        <textarea value={draft.portfolio.description ?? ''} onChange={e => update('portfolio', 'description', e.target.value)}
+          rows={3} placeholder="Optional intro text under 'Selected Projects'..."
+          style={{ display: 'block', width: '100%', padding: '7px 12px', border: `1px solid ${LIGHT_GOLD}`, borderRadius: '6px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', marginTop: '4px', resize: 'vertical', fontFamily: 'inherit' }} />
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h4 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em' }}>PORTFOLIO ITEMS</h4>
         <button onClick={() => update('portfolio', 'items', [...draft.portfolio.items, { title: '', tag: '', img: '', link: '' }])}
@@ -257,6 +263,12 @@ export default function AdminPanel({ content, onSave, onClose }: Props) {
     const items: any[] = (draft as any).caseStudies ?? [];
     return (
       <div>
+        <div style={{ marginBottom: '1.2rem' }}>
+          <label style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: '#888' }}>DESCRIPTION (shown below section title)</label>
+          <textarea value={(draft as any).caseStudiesDescription ?? ''} onChange={e => setDraft(prev => ({ ...prev, caseStudiesDescription: e.target.value } as any))}
+            rows={3} placeholder="Optional intro text under 'Case Studies'..."
+            style={{ display: 'block', width: '100%', padding: '7px 12px', border: `1px solid ${LIGHT_GOLD}`, borderRadius: '6px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', marginTop: '4px', resize: 'vertical', fontFamily: 'inherit' }} />
+        </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h4 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em' }}>CASE STUDIES</h4>
           <button onClick={() => { const u = [...items, { label: '', file: '' }]; setDraft(prev => ({ ...prev, caseStudies: u } as any)); }}
