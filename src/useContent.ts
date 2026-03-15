@@ -35,6 +35,7 @@ export function useContent() {
           recommendations: { ...defaultContent.recommendations, ...(data.recommendations ?? {}) },
           caseStudiesDescription: (data as any)?.caseStudiesDescription ?? defaultContent.caseStudiesDescription,
           caseStudies: (data as any)?.caseStudies ?? defaultContent.caseStudies,
+          music: { ...defaultContent.music, ...((data as any).music ?? {}) },
           contact: {
             ...defaultContent.contact,
             ...(data.contact ?? {}),

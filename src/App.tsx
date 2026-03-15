@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Award, Briefcase, Mail, Phone, MapPin, ExternalLink, Star, Menu, X } from 'lucide-react';
+import { Award, Briefcase, Mail, Phone, MapPin, ExternalLink, Star, Menu, X, Play, Pause, Music } from 'lucide-react';
 import { signInWithPopup, onAuthStateChanged, User } from 'firebase/auth';
 import { auth, googleProvider } from './firebase';
 import { useContent } from './useContent';
@@ -13,6 +13,50 @@ const CREAM = '#f5f0e8';
 const LIGHT_GOLD = '#e8d9be';
 
 const navLinks = ['HOME', 'ABOUT', 'RESUME', 'PORTFOLIO', 'CASE STUDY', 'RECOMMENDATIONS', 'CONTACT'];
+
+function MusicPlayer({ url }: { url: string }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!url) return;
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = 0.35;
+    audio.loop = true;
+    setReady(true);
+    audio.play().then(() => setPlaying(true)).catch(() => {});
+  }, [url]);
+
+  const toggle = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) { audio.pause(); setPlaying(false); }
+    else { audio.play(); setPlaying(true); }
+  };
+
+  if (!url) return null;
+
+  return (
+    <>
+      <audio ref={audioRef} src={url} loop />
+      {ready && (
+        <button onClick={toggle} title={playing ? 'Pause music' : 'Play music'} style={{
+          position: 'fixed', bottom: '28px', left: '28px', zIndex: 200,
+          width: '46px', height: '46px', borderRadius: '50%',
+          backgroundColor: DARK, border: `1.5px solid ${GOLD}`,
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.25)', transition: 'transform 0.2s',
+        }}
+          onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.1)')}
+          onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
+          {playing ? <Pause size={16} color={GOLD} /> : <Music size={16} color={GOLD} />}
+        </button>
+      )}
+    </>
+  );
+}
 
 function useWindowWidth() {
   const [width, setWidth] = useState(window.innerWidth);
@@ -633,6 +677,8 @@ export default function App() {
           )}
         </div>
       </footer>
+
+      <MusicPlayer url={(content as any).music?.url ?? ''} />
 
       {adminOpen && isAdmin && (
         <AdminPanel content={content} onSave={saveContent} onClose={() => setAdminOpen(false)} />

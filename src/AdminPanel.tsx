@@ -79,6 +79,13 @@ export default function AdminPanel({ content, onSave, onClose }: Props) {
 
   const renderHero = () => (
     <div>
+      <div style={{ marginBottom: '0.8rem' }}>
+        <label style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: '#888' }}>BACKGROUND MUSIC URL (.mp3 or audio link)</label>
+        <input value={(draft as any).music?.url ?? ''} onChange={e => setDraft(prev => ({ ...prev, music: { url: e.target.value } } as any))}
+          placeholder="https://... or /music.mp3"
+          style={{ display: 'block', width: '100%', padding: '7px 12px', border: `1px solid ${LIGHT_GOLD}`, borderRadius: '6px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', marginTop: '4px' }} />
+        <p style={{ margin: '4px 0 0', fontSize: '0.7rem', color: '#aaa' }}>Upload the .mp3 to /public or use a direct audio URL. Leave blank to disable.</p>
+      </div>
       {input('First Name', draft.hero.firstName, v => update('hero', 'firstName', v))}
       {input('Last Name', draft.hero.lastName, v => update('hero', 'lastName', v))}
       {input('Subtitle (e.g. CLASS OF 2026)', draft.hero.subtitle, v => update('hero', 'subtitle', v))}
