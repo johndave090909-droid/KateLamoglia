@@ -267,7 +267,10 @@ function PortfolioSection({ sectionRefs, content, isMobile }: {
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
         <p style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.22em', color: GOLD, marginBottom: '0.8rem', textAlign: 'center' }}>MY WORK</p>
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? '2rem' : '2.8rem', fontWeight: 400, textAlign: 'center', margin: '0 0 0.5rem' }}>Selected Projects</h2>
-        <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#aaa', letterSpacing: '0.08em', margin: 0 }}>Drag to explore</p>
+        <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#aaa', letterSpacing: '0.08em', margin: '0 0 0.4rem' }}>Drag to explore</p>
+        {items.length > 0 && (
+          <p style={{ textAlign: 'center', fontSize: '0.72rem', color: GOLD, fontWeight: 600, letterSpacing: '0.14em', margin: 0 }}>{items.length} {items.length === 1 ? 'PROJECT' : 'PROJECTS'}</p>
+        )}
       </div>
       {items.length > 0 && <MarqueeStrips items={items} isMobile={isMobile} />}
     </section>
@@ -331,7 +334,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [adminOpen, setAdminOpen] = useState(false);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
-  const { content, saveContent } = useContent();
+  const { content, loading, saveContent } = useContent();
   const width = useWindowWidth();
   const isMobile = width < 768;
 
@@ -359,6 +362,12 @@ export default function App() {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setMenuOpen(false);
   };
+
+  if (loading) return (
+    <div style={{ minHeight: '100vh', backgroundColor: CREAM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.6rem', color: GOLD, letterSpacing: '0.1em' }}>Kate</span>
+    </div>
+  );
 
   return (
     <div style={{ backgroundColor: CREAM, color: DARK, fontFamily: "'Montserrat', sans-serif" }}>
