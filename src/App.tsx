@@ -30,7 +30,12 @@ function MusicPlayer({ url }: { url: string }) {
     audio.addEventListener('pause', () => setPlaying(false));
     audio.addEventListener('error', (e) => console.error('Audio error:', e, url));
 
-    audio.play().catch(() => {});
+    audio.play().catch(() => {
+      const start = () => { audio.play().catch(() => {}); };
+      document.addEventListener('scroll', start, { once: true });
+      document.addEventListener('click', start, { once: true });
+      document.addEventListener('keydown', start, { once: true });
+    });
 
     return () => { audio.pause(); audio.src = ''; };
   }, [url]);
