@@ -32,9 +32,9 @@ function MusicPlayer({ url }: { url: string }) {
 
     audio.play().catch(() => {
       const start = () => { audio.play().catch(() => {}); };
-      document.addEventListener('scroll', start, { once: true });
       document.addEventListener('click', start, { once: true });
       document.addEventListener('keydown', start, { once: true });
+      document.addEventListener('touchend', start, { once: true });
     });
 
     return () => { audio.pause(); audio.src = ''; };
