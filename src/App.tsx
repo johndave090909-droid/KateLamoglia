@@ -518,7 +518,7 @@ export default function App() {
             <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? '1rem' : '1.15rem', lineHeight: 1.8, color: '#555', marginBottom: '1rem' }}>{content.about.bio1}</p>
             <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? '1rem' : '1.15rem', lineHeight: 1.8, color: '#555', marginBottom: '1.5rem' }}>{content.about.bio2}</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              {[['Major', content.about.major], ['University', content.about.university], ['Graduation', content.about.graduation], ['Location', content.about.location]].map(([label, value]) => (
+              {[['Major', content.about.major], ['University', content.about.university], ['Location', content.about.location]].map(([label, value]) => (
                 <div key={label}>
                   <p style={{ margin: 0, fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.14em', color: '#999' }}>{label.toUpperCase()}</p>
                   <p style={{ margin: '4px 0 0', fontSize: '0.88rem', fontWeight: 500 }}>{value}</p>
