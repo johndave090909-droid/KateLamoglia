@@ -128,7 +128,7 @@ export const defaultContent = {
     { label: 'Team Menu', file: '/Team menu presentation (1).pdf' },
   ],
   music: {
-    url: '',
+    url: "/C'est%20si%20bon.mp3",
   },
   contact: {
     tagline: "I'm open to internship opportunities, brand collaborations, and creative partnerships. Don't hesitate to reach out.",
