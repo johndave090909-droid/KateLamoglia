@@ -28,13 +28,9 @@ function MusicPlayer({ url }: { url: string }) {
 
     audio.addEventListener('play', () => setPlaying(true));
     audio.addEventListener('pause', () => setPlaying(false));
+    audio.addEventListener('error', (e) => console.error('Audio error:', e, url));
 
-    // Try autoplay; if blocked, play on first interaction
-    audio.play().catch(() => {
-      const onInteract = () => { audio.play().catch(() => {}); };
-      document.addEventListener('click', onInteract, { once: true });
-      document.addEventListener('scroll', onInteract, { once: true });
-    });
+    audio.play().catch(() => {});
 
     return () => { audio.pause(); audio.src = ''; };
   }, [url]);
@@ -42,7 +38,11 @@ function MusicPlayer({ url }: { url: string }) {
   const toggle = () => {
     const audio = audioRef.current;
     if (!audio) return;
-    playing ? audio.pause() : audio.play().catch(() => {});
+    if (playing) {
+      audio.pause();
+    } else {
+      audio.play().catch((e) => console.error('Play failed:', e));
+    }
   };
 
   if (!url) return null;
