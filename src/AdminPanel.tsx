@@ -231,6 +231,12 @@ export default function AdminPanel({ content, onSave, onClose }: Props) {
     const socials = (draft.contact as any).socials ?? [];
     return (
       <div>
+        <div style={{ marginBottom: '0.8rem' }}>
+          <label style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: '#888' }}>TAGLINE (shown under "Let's Work Together")</label>
+          <textarea value={(draft.contact as any).tagline ?? ''} onChange={e => update('contact', 'tagline', e.target.value)}
+            rows={3} placeholder="I'm open to internship opportunities..."
+            style={{ display: 'block', width: '100%', padding: '7px 12px', border: `1px solid ${LIGHT_GOLD}`, borderRadius: '6px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', marginTop: '4px', resize: 'vertical', fontFamily: 'inherit' }} />
+        </div>
         {input('Email', draft.contact.email, v => update('contact', 'email', v))}
         {input('Phone', draft.contact.phone, v => update('contact', 'phone', v))}
         {input('Location', draft.contact.location, v => update('contact', 'location', v))}

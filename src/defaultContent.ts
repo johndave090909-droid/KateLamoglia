@@ -128,6 +128,7 @@ export const defaultContent = {
     { label: 'Team Menu', file: '/Team menu presentation (1).pdf' },
   ],
   contact: {
+    tagline: "I'm open to internship opportunities, brand collaborations, and creative partnerships. Don't hesitate to reach out.",
     email: 'katriel@email.com',
     phone: '+63 912 345 6789',
     location: 'Manila, Philippines',

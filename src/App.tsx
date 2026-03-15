@@ -588,9 +588,11 @@ export default function App() {
         <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
           <p style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.22em', color: GOLD, marginBottom: '0.8rem' }}>GET IN TOUCH</p>
           <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? '2rem' : '2.8rem', fontWeight: 400, margin: '0 0 1rem' }}>Let's Work Together</h2>
-          <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? '1rem' : '1.15rem', color: '#666', lineHeight: 1.7, maxWidth: '520px', margin: '0 auto 2.5rem' }}>
-            I'm open to internship opportunities, brand collaborations, and creative partnerships. Don't hesitate to reach out.
-          </p>
+          {content.contact.tagline && (
+            <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? '1rem' : '1.15rem', color: '#666', lineHeight: 1.7, maxWidth: '520px', margin: '0 auto 2.5rem' }}>
+              {content.contact.tagline}
+            </p>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1rem' }}>
             {[
               { icon: <Mail size={18} color={GOLD} />, label: 'EMAIL', value: content.contact.email },
