@@ -9,7 +9,7 @@ const DARK = '#1c1c1c';
 const CREAM = '#f5f0e8';
 const LIGHT_GOLD = '#e8d9be';
 
-const tabs = ['Hero', 'About', 'Resume', 'Portfolio', 'Recommendations', 'Contact'];
+const tabs = ['Hero', 'About', 'Resume', 'Portfolio', 'Case Studies', 'Recommendations', 'Contact'];
 
 interface Props {
   content: SiteContent;
@@ -248,12 +248,56 @@ export default function AdminPanel({ content, onSave, onClose }: Props) {
     );
   };
 
+  const renderCaseStudies = () => {
+    const items: any[] = (draft as any).caseStudies ?? [];
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h4 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em' }}>CASE STUDIES</h4>
+          <button onClick={() => { const u = [...items, { label: '', file: '' }]; setDraft(prev => ({ ...prev, caseStudies: u } as any)); }}
+            style={{ padding: '6px 14px', backgroundColor: GOLD, color: '#fff', border: 'none', borderRadius: '999px', fontSize: '0.72rem', cursor: 'pointer' }}>+ Add</button>
+        </div>
+        {items.map((cs: any, i: number) => (
+          <div key={i} style={{ backgroundColor: CREAM, borderRadius: '12px', padding: '1.2rem', marginBottom: '1rem', position: 'relative' }}>
+            <button onClick={() => setDraft(prev => ({ ...prev, caseStudies: items.filter((_: any, j: number) => j !== i) } as any))}
+              style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '1rem' }}>✕</button>
+            <div style={{ marginBottom: '0.6rem' }}>
+              <label style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: '#888' }}>TAB LABEL</label>
+              <input value={cs.label} onChange={e => { const u = [...items]; u[i].label = e.target.value; setDraft(prev => ({ ...prev, caseStudies: u } as any)); }}
+                style={{ display: 'block', width: '100%', padding: '7px 12px', border: `1px solid ${LIGHT_GOLD}`, borderRadius: '6px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', marginTop: '4px' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: '#888' }}>PDF FILE</label>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '4px' }}>
+                <label style={{ cursor: 'pointer', padding: '7px 14px', border: `1.5px dashed ${LIGHT_GOLD}`, borderRadius: '6px', fontSize: '0.75rem', whiteSpace: 'nowrap', color: DARK }}>
+                  {uploading === `cs-pdf-${i}` ? 'Uploading...' : '↑ Upload PDF'}
+                  <input type="file" accept="application/pdf" style={{ display: 'none' }} onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) uploadImage(`cs-pdf-${i}`, file, url => {
+                      const u = [...items]; u[i].file = url;
+                      setDraft(prev => ({ ...prev, caseStudies: u } as any));
+                    });
+                  }} />
+                </label>
+                <input value={cs.file} onChange={e => { const u = [...items]; u[i].file = e.target.value; setDraft(prev => ({ ...prev, caseStudies: u } as any)); }}
+                  placeholder="or paste URL"
+                  style={{ flex: 1, padding: '7px 12px', border: `1px solid ${LIGHT_GOLD}`, borderRadius: '6px', fontSize: '0.82rem', outline: 'none' }} />
+                {cs.file && <a href={cs.file} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.72rem', color: GOLD, whiteSpace: 'nowrap' }}>View</a>}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const renderTab = () => {
     switch (activeTab) {
       case 'Hero': return renderHero();
       case 'About': return renderAbout();
       case 'Resume': return renderResume();
       case 'Portfolio': return renderPortfolio();
+      case 'Case Studies': return renderCaseStudies();
       case 'Recommendations': return renderRecommendations();
       case 'Contact': return renderContact();
     }

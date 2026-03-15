@@ -33,6 +33,7 @@ export function useContent() {
           about: { ...defaultContent.about, ...(data.about ?? {}) },
           portfolio: { ...defaultContent.portfolio, ...(data.portfolio ?? {}) },
           recommendations: { ...defaultContent.recommendations, ...(data.recommendations ?? {}) },
+          caseStudies: (data as any)?.caseStudies ?? defaultContent.caseStudies,
           contact: {
             ...defaultContent.contact,
             ...(data.contact ?? {}),

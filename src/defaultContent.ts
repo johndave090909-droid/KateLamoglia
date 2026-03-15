@@ -116,6 +116,15 @@ export const defaultContent = {
       { name: 'Carlo Mendez', role: 'Brand Director, Ayala Malls', quote: "She consistently delivers thoughtful, data-backed recommendations. Her consumer research internship output exceeded expectations for a student her level.", link: '' },
     ],
   },
+  caseStudies: [
+    { label: 'Ciao Casa', file: '/CIAO CASA PPTX.pdf' },
+    { label: 'Pure Pour', file: '/Empower your dream - PURE POUR.pdf' },
+    { label: 'HTM Presentation', file: '/HTM PRESENTATION.pdf' },
+    { label: 'HTM Restaurant', file: '/HTM RESTAURANT CONCEPT.pdf' },
+    { label: 'Kasama Economics', file: '/KASAMA ECONOMICS FINAL KATE.pdf' },
+    { label: "McDonald's Mix", file: '/Mcdonalds Marketing Mix (1).pdf' },
+    { label: 'Team Menu', file: '/Team menu presentation (1).pdf' },
+  ],
   contact: {
     email: 'katriel@email.com',
     phone: '+63 912 345 6789',
