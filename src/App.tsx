@@ -26,7 +26,13 @@ function MusicPlayer({ url }: { url: string }) {
     audio.volume = 0.35;
     audio.loop = true;
     setReady(true);
-    audio.play().then(() => setPlaying(true)).catch(() => {});
+    const tryPlay = () => {
+      audio.play().then(() => setPlaying(true)).catch(() => {});
+    };
+    tryPlay();
+    // Retry autoplay on first user interaction
+    document.addEventListener('click', tryPlay, { once: true });
+    return () => document.removeEventListener('click', tryPlay);
   }, [url]);
 
   const toggle = () => {
