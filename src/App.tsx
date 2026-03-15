@@ -517,7 +517,7 @@ export default function App() {
             </div>
           </div>
           <div style={{ paddingBottom: isMobile ? '1rem' : '0' }}>
-            <p style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.22em', color: GOLD, marginBottom: '1rem' }}>ABOUT ME</p>
+            <p style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.22em', color: GOLD, marginBottom: '1rem' }}>ELEVATOR PITCH</p>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? '2rem' : '2.8rem', fontWeight: 400, margin: '0 0 1.2rem', lineHeight: 1.2 }}>
               Crafting stories that <em style={{ color: GOLD }}>inspire</em>
             </h2>
