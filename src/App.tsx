@@ -3,6 +3,7 @@ import { Award, Briefcase, Mail, Phone, MapPin, ExternalLink, Star, Menu, X, Pla
 import { signInWithPopup, onAuthStateChanged, User } from 'firebase/auth';
 import { auth, googleProvider } from './firebase';
 import { useContent } from './useContent';
+import { defaultContent } from './defaultContent';
 import AdminPanel from './AdminPanel';
 
 const ADMIN_EMAILS = ['johndave090909@gmail.com', 'Katriellamoglia2001@gmail.com'];
@@ -15,52 +16,49 @@ const LIGHT_GOLD = '#e8d9be';
 const navLinks = ['HOME', 'ABOUT', 'RESUME', 'PORTFOLIO', 'CASE STUDY', 'RECOMMENDATIONS', 'CONTACT'];
 
 function MusicPlayer({ url }: { url: string }) {
-  const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
-  const [ready, setReady] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (!url) return;
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.volume = 0.35;
+    const audio = new Audio(url);
     audio.loop = true;
-    setReady(true);
-    const tryPlay = () => {
-      audio.play().then(() => setPlaying(true)).catch(() => {});
-    };
-    tryPlay();
-    // Retry autoplay on first user interaction
-    document.addEventListener('click', tryPlay, { once: true });
-    return () => document.removeEventListener('click', tryPlay);
+    audio.volume = 0.35;
+    audioRef.current = audio;
+
+    audio.addEventListener('play', () => setPlaying(true));
+    audio.addEventListener('pause', () => setPlaying(false));
+
+    // Try autoplay; if blocked, play on first interaction
+    audio.play().catch(() => {
+      const onInteract = () => { audio.play().catch(() => {}); };
+      document.addEventListener('click', onInteract, { once: true });
+      document.addEventListener('scroll', onInteract, { once: true });
+    });
+
+    return () => { audio.pause(); audio.src = ''; };
   }, [url]);
 
   const toggle = () => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (playing) { audio.pause(); setPlaying(false); }
-    else { audio.play(); setPlaying(true); }
+    playing ? audio.pause() : audio.play().catch(() => {});
   };
 
   if (!url) return null;
 
   return (
-    <>
-      <audio ref={audioRef} src={url} loop />
-      {ready && (
-        <button onClick={toggle} title={playing ? 'Pause music' : 'Play music'} style={{
-          position: 'fixed', bottom: '28px', left: '28px', zIndex: 200,
-          width: '46px', height: '46px', borderRadius: '50%',
-          backgroundColor: DARK, border: `1.5px solid ${GOLD}`,
-          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.25)', transition: 'transform 0.2s',
-        }}
-          onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.1)')}
-          onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
-          {playing ? <Pause size={16} color={GOLD} /> : <Music size={16} color={GOLD} />}
-        </button>
-      )}
-    </>
+    <button onClick={toggle} title={playing ? 'Pause music' : 'Play music'} style={{
+      position: 'fixed', bottom: '28px', left: '28px', zIndex: 200,
+      width: '46px', height: '46px', borderRadius: '50%',
+      backgroundColor: DARK, border: `1.5px solid ${GOLD}`,
+      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.25)', transition: 'transform 0.2s',
+    }}
+      onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.1)')}
+      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
+      {playing ? <Pause size={16} color={GOLD} /> : <Music size={16} color={GOLD} />}
+    </button>
   );
 }
 
@@ -684,7 +682,7 @@ export default function App() {
         </div>
       </footer>
 
-      <MusicPlayer url={(content as any).music?.url ?? ''} />
+      <MusicPlayer url={(content as any).music?.url || defaultContent.music.url} />
 
       {adminOpen && isAdmin && (
         <AdminPanel content={content} onSave={saveContent} onClose={() => setAdminOpen(false)} />
