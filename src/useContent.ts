@@ -10,7 +10,35 @@ export function useContent() {
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'site', 'content'), (snap) => {
       if (snap.exists()) {
-        setContent({ ...defaultContent, ...snap.data() as SiteContent });
+        const data = snap.data() as Partial<SiteContent>;
+        setContent({
+          ...defaultContent,
+          ...data,
+          resume: {
+            ...defaultContent.resume,
+            personalBrand: (data.resume as any)?.personalBrand ?? defaultContent.resume.personalBrand,
+            leadershipStrengths: (data.resume as any)?.leadershipStrengths ?? defaultContent.resume.leadershipStrengths,
+            accomplishments: (data.resume as any)?.accomplishments ?? defaultContent.resume.accomplishments,
+            // Only use Firestore experience if it has the new format (has bullets array)
+            experience: (data.resume as any)?.experience?.[0]?.bullets
+              ? (data.resume as any).experience
+              : defaultContent.resume.experience,
+            credentials: {
+              ...defaultContent.resume.credentials,
+              ...((data.resume as any)?.credentials ?? {}),
+            },
+            skills: (data.resume as any)?.skills ?? defaultContent.resume.skills,
+          },
+          hero: { ...defaultContent.hero, ...(data.hero ?? {}) },
+          about: { ...defaultContent.about, ...(data.about ?? {}) },
+          portfolio: { ...defaultContent.portfolio, ...(data.portfolio ?? {}) },
+          recommendations: { ...defaultContent.recommendations, ...(data.recommendations ?? {}) },
+          contact: {
+            ...defaultContent.contact,
+            ...(data.contact ?? {}),
+            socials: (data.contact as any)?.socials ?? defaultContent.contact.socials,
+          },
+        });
       }
       setLoading(false);
     });

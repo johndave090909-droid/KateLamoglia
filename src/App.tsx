@@ -25,6 +25,145 @@ const caseStudies = [
   { label: 'Team Menu', file: '/Team menu presentation (1).pdf', type: 'pdf' },
 ];
 
+function ResumeSection({ sectionRefs, content }: { sectionRefs: React.MutableRefObject<Record<string, HTMLElement | null>>, content: any }) {
+  const [showFull, setShowFull] = useState(false);
+  const r = content.resume;
+
+  return (
+    <section ref={(el) => { sectionRefs.current['RESUME'] = el; }} id="RESUME"
+      style={{ padding: '100px 8%', backgroundColor: CREAM }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+        <p style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.22em', color: GOLD, marginBottom: '0.8rem', textAlign: 'center' }}>MY BACKGROUND</p>
+
+        {/* Core Leadership Strengths */}
+        <div style={{ backgroundColor: '#fff', borderRadius: '20px', padding: '2.5rem 3rem', marginBottom: '2rem' }}>
+          <p style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.16em', color: GOLD, margin: '0 0 1.5rem' }}>CORE LEADERSHIP STRENGTHS</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.8rem' }}>
+            {(r.leadershipStrengths ?? []).map((strength: string, i: number) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '0.9rem 1rem', backgroundColor: CREAM, borderRadius: '10px' }}>
+                <span style={{ color: GOLD, fontSize: '1rem', lineHeight: 1, marginTop: '2px', flexShrink: 0 }}>•</span>
+                <span style={{ fontSize: '0.85rem', lineHeight: 1.5, color: DARK }}>{strength}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Toggle button */}
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <button onClick={() => setShowFull(v => !v)} style={{
+            padding: '12px 32px', backgroundColor: showFull ? CREAM : DARK, color: showFull ? DARK : '#fff',
+            border: `1.5px solid ${DARK}`, borderRadius: '999px', fontSize: '0.72rem', fontWeight: 700,
+            letterSpacing: '0.12em', cursor: 'pointer', fontFamily: "'Montserrat', sans-serif", transition: 'all 0.2s',
+          }}>{showFull ? 'HIDE FULL RESUME' : 'VIEW FULL RESUME'}</button>
+        </div>
+
+        {/* Full Resume */}
+        {showFull && (
+          <div style={{ backgroundColor: '#fff', borderRadius: '20px', padding: '3rem 3.5rem', boxShadow: '0 10px 40px rgba(0,0,0,0.07)' }}>
+            {/* Header */}
+            <div style={{ borderBottom: `2px solid ${DARK}`, paddingBottom: '1.5rem', marginBottom: '2rem', textAlign: 'center' }}>
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '2rem', fontWeight: 700, margin: '0 0 0.5rem', letterSpacing: '0.08em' }}>KATRIEL LAMOGLIA</h2>
+              <p style={{ margin: 0, fontSize: '0.82rem', color: '#666', letterSpacing: '0.06em' }}>
+                Laie, Hawaii &nbsp;|&nbsp; 385-244-7910 &nbsp;|&nbsp; katriellamoglia2001@gmail.com &nbsp;|&nbsp; LinkedIn Profile
+              </p>
+            </div>
+
+            {/* Personal Brand */}
+            <div style={{ marginBottom: '2.5rem' }}>
+              <h3 style={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.16em', color: DARK, borderBottom: `1px solid ${LIGHT_GOLD}`, paddingBottom: '0.5rem', marginBottom: '1rem' }}>PERSONAL BRAND</h3>
+              <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.05rem', lineHeight: 1.8, color: '#444', margin: 0 }}>{r.personalBrand}</p>
+            </div>
+
+            {/* Core Leadership Strengths */}
+            <div style={{ marginBottom: '2.5rem' }}>
+              <h3 style={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.16em', color: DARK, borderBottom: `1px solid ${LIGHT_GOLD}`, paddingBottom: '0.5rem', marginBottom: '1rem' }}>CORE LEADERSHIP STRENGTHS</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                {(r.leadershipStrengths ?? []).map((strength: string, i: number) => (
+                  <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                    <span style={{ color: GOLD, flexShrink: 0 }}>•</span>
+                    <span style={{ fontSize: '0.85rem', lineHeight: 1.5, color: '#444' }}>{strength}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Transformational Accomplishments */}
+            <div style={{ marginBottom: '2.5rem' }}>
+              <h3 style={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.16em', color: DARK, borderBottom: `1px solid ${LIGHT_GOLD}`, paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>TRANSFORMATIONAL ACCOMPLISHMENTS</h3>
+              {(r.accomplishments ?? []).map((acc: any, i: number) => (
+                <div key={i} style={{ marginBottom: '1.5rem' }}>
+                  <p style={{ fontWeight: 700, fontSize: '0.95rem', margin: '0 0 0.6rem', color: DARK }}>{acc.title}</p>
+                  {acc.bullets.map((b: string, j: number) => (
+                    <div key={j} style={{ display: 'flex', gap: '10px', marginBottom: '0.4rem' }}>
+                      <span style={{ color: GOLD, flexShrink: 0 }}>•</span>
+                      <p style={{ margin: 0, fontSize: '0.9rem', fontFamily: "'Cormorant Garamond', serif", lineHeight: 1.7, color: '#444' }}>{b}</p>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Professional Experience */}
+            <div style={{ marginBottom: '2.5rem' }}>
+              <h3 style={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.16em', color: DARK, borderBottom: `1px solid ${LIGHT_GOLD}`, paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>PROFESSIONAL EXPERIENCE</h3>
+              {(r.experience ?? []).map((exp: any, i: number) => (
+                <div key={i} style={{ marginBottom: '1.8rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <p style={{ fontWeight: 700, fontSize: '1rem', margin: 0 }}>{exp.title}</p>
+                    <p style={{ fontSize: '0.78rem', color: GOLD, margin: 0, fontWeight: 600 }}>{exp.period}</p>
+                  </div>
+                  <p style={{ margin: '2px 0 0.8rem', fontSize: '0.85rem', color: '#888' }}>{exp.company} — {exp.location}</p>
+                  {exp.bullets.map((b: string, j: number) => (
+                    <div key={j} style={{ display: 'flex', gap: '10px', marginBottom: '0.4rem' }}>
+                      <span style={{ color: GOLD, flexShrink: 0 }}>•</span>
+                      <p style={{ margin: 0, fontSize: '0.9rem', fontFamily: "'Cormorant Garamond', serif", lineHeight: 1.7, color: '#444' }}>{b}</p>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Credentials */}
+            <div>
+              <h3 style={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.16em', color: DARK, borderBottom: `1px solid ${LIGHT_GOLD}`, paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>RELEVANT CREDENTIALS & SPECIALIZED TRAINING</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem' }}>
+                <div>
+                  <p style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.12em', color: GOLD, margin: '0 0 0.8rem' }}>EDUCATION</p>
+                  {(r.credentials?.education ?? []).map((ed: any, i: number) => (
+                    <div key={i} style={{ marginBottom: '0.8rem' }}>
+                      <p style={{ margin: 0, fontWeight: 600, fontSize: '0.88rem' }}>{ed.school}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: '#666', fontFamily: "'Cormorant Garamond', serif" }}>{ed.degree}</p>
+                      {ed.period && <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: GOLD }}>{ed.period}</p>}
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.12em', color: GOLD, margin: '0 0 0.8rem' }}>CERTIFICATIONS</p>
+                  {(r.credentials?.certifications ?? []).map((c: string, i: number) => (
+                    <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '0.4rem' }}>
+                      <span style={{ color: GOLD, flexShrink: 0 }}>•</span>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: '#444' }}>{c}</p>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.12em', color: GOLD, margin: '0 0 0.8rem' }}>LEADERSHIP & DEVELOPMENT</p>
+                  {(r.credentials?.leadership ?? []).map((l: string, i: number) => (
+                    <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '0.4rem' }}>
+                      <span style={{ color: GOLD, flexShrink: 0 }}>•</span>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: '#444' }}>{l}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function CaseStudySection({ sectionRefs }: { sectionRefs: React.MutableRefObject<Record<string, HTMLElement | null>> }) {
   const [activeTab, setActiveTab] = useState(0);
   const current = caseStudies[activeTab];
@@ -241,69 +380,7 @@ export default function App() {
       </section>
 
       {/* RESUME */}
-      <section ref={(el) => { sectionRefs.current['RESUME'] = el; }} id="RESUME"
-        style={{ padding: '100px 8%', backgroundColor: CREAM }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <p style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.22em', color: GOLD, marginBottom: '0.8rem', textAlign: 'center' }}>MY BACKGROUND</p>
-          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '2.8rem', fontWeight: 400, textAlign: 'center', margin: '0 0 4rem' }}>Education & Experience</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem' }}>
-            {/* Education */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '2rem' }}>
-                <BookOpen size={20} color={GOLD} />
-                <h3 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.16em' }}>EDUCATION</h3>
-              </div>
-              {content.resume.education.map((item, i) => (
-                <div key={i} style={{ display: 'flex', gap: '1.2rem', marginBottom: '2rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: GOLD, flexShrink: 0, marginTop: '4px' }} />
-                    {i < content.resume.education.length - 1 && <div style={{ width: '1px', flex: 1, backgroundColor: LIGHT_GOLD, marginTop: '6px' }} />}
-                  </div>
-                  <div style={{ paddingBottom: '1.5rem' }}>
-                    <p style={{ margin: 0, fontSize: '0.65rem', color: GOLD, fontWeight: 600, letterSpacing: '0.1em' }}>{item.year}</p>
-                    <p style={{ margin: '4px 0 2px', fontWeight: 600, fontSize: '1rem' }}>{item.title}</p>
-                    <p style={{ margin: '0 0 6px', fontSize: '0.85rem', color: '#888' }}>{item.place}</p>
-                    <p style={{ margin: 0, fontSize: '0.9rem', fontFamily: "'Cormorant Garamond', serif", color: '#666', lineHeight: 1.6 }}>{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {/* Experience */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '2rem' }}>
-                <Briefcase size={20} color={GOLD} />
-                <h3 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.16em' }}>EXPERIENCE</h3>
-              </div>
-              {content.resume.experience.map((item, i) => (
-                <div key={i} style={{ display: 'flex', gap: '1.2rem', marginBottom: '2rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: GOLD, flexShrink: 0, marginTop: '4px' }} />
-                    {i < content.resume.experience.length - 1 && <div style={{ width: '1px', flex: 1, backgroundColor: LIGHT_GOLD, marginTop: '6px' }} />}
-                  </div>
-                  <div style={{ paddingBottom: '1.5rem' }}>
-                    <p style={{ margin: 0, fontSize: '0.65rem', color: GOLD, fontWeight: 600, letterSpacing: '0.1em' }}>{item.year}</p>
-                    <p style={{ margin: '4px 0 2px', fontWeight: 600, fontSize: '1rem' }}>{item.title}</p>
-                    <p style={{ margin: '0 0 6px', fontSize: '0.85rem', color: '#888' }}>{item.place}</p>
-                    <p style={{ margin: 0, fontSize: '0.9rem', fontFamily: "'Cormorant Garamond', serif", color: '#666', lineHeight: 1.6 }}>{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Skills */}
-          <div style={{ marginTop: '3rem', padding: '2.5rem', backgroundColor: '#fff', borderRadius: '20px' }}>
-            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.4rem', fontWeight: 400, marginBottom: '1.8rem' }}>Core Skills</h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem' }}>
-              {content.resume.skills.map(skill => (
-                <span key={skill} style={{ padding: '8px 18px', border: `1px solid ${LIGHT_GOLD}`, borderRadius: '999px', fontSize: '0.8rem', color: DARK, backgroundColor: CREAM }}>
-                  {skill}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <ResumeSection sectionRefs={sectionRefs} content={content} />
 
       {/* PORTFOLIO */}
       <section ref={(el) => { sectionRefs.current['PORTFOLIO'] = el; }} id="PORTFOLIO"
@@ -338,20 +415,33 @@ export default function App() {
           <p style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.22em', color: GOLD, marginBottom: '0.8rem', textAlign: 'center' }}>WHAT THEY SAY</p>
           <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '2.8rem', fontWeight: 400, textAlign: 'center', margin: '0 0 4rem', color: '#fff' }}>Recommendations</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.8rem' }}>
-            {content.recommendations.items.map((rec, i) => (
-              <div key={i} style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '2.2rem', border: '1px solid rgba(201,169,110,0.2)' }}>
-                <div style={{ display: 'flex', gap: '4px', marginBottom: '1.2rem' }}>
-                  {[...Array(5)].map((_, s) => <Star key={s} size={14} fill={GOLD} color={GOLD} />)}
-                </div>
-                <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.1rem', lineHeight: 1.75, color: 'rgba(255,255,255,0.8)', margin: '0 0 1.5rem', fontStyle: 'italic' }}>
-                  "{rec.quote}"
-                </p>
-                <div>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: '0.95rem' }}>{rec.name}</p>
-                  <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: GOLD }}>{rec.role}</p>
-                </div>
-              </div>
-            ))}
+            {content.recommendations.items.map((rec, i) => {
+              const cardStyle: React.CSSProperties = { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '2.2rem', border: '1px solid rgba(201,169,110,0.2)', display: 'block', textDecoration: 'none', color: 'inherit', transition: 'border-color 0.2s, transform 0.2s' };
+              const inner = (
+                <>
+                  <div style={{ display: 'flex', gap: '4px', marginBottom: '1.2rem' }}>
+                    {[...Array(5)].map((_, s) => <Star key={s} size={14} fill={GOLD} color={GOLD} />)}
+                  </div>
+                  <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.1rem', lineHeight: 1.75, color: 'rgba(255,255,255,0.8)', margin: '0 0 1.5rem', fontStyle: 'italic' }}>
+                    "{rec.quote}"
+                  </p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 600, fontSize: '0.95rem' }}>{rec.name}</p>
+                      <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: GOLD }}>{rec.role}</p>
+                    </div>
+                    {rec.link && <ExternalLink size={16} color={GOLD} />}
+                  </div>
+                </>
+              );
+              return rec.link
+                ? <a key={i} href={rec.link} target="_blank" rel="noopener noreferrer" style={cardStyle}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = GOLD; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(201,169,110,0.2)'; (e.currentTarget as HTMLElement).style.transform = 'none'; }}>
+                    {inner}
+                  </a>
+                : <div key={i} style={cardStyle}>{inner}</div>;
+            })}
           </div>
         </div>
       </section>
@@ -398,8 +488,12 @@ export default function App() {
         <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.2rem', color: '#fff' }}>Kate</span>
         <span>© 2025 Katriel Lamoglia. All rights reserved.</span>
         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-          {['LinkedIn', 'Instagram', 'Behance'].map(s => (
-            <a key={s} href="#" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none', fontSize: '0.72rem', letterSpacing: '0.1em' }}>{s.toUpperCase()}</a>
+          {(content.contact.socials ?? []).filter((s: any) => s.url).map((s: any) => (
+            <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none', fontSize: '0.72rem', letterSpacing: '0.1em', transition: 'color 0.2s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = GOLD)}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}>
+              {s.label.toUpperCase()}
+            </a>
           ))}
           {isAdmin ? (
             <button onClick={() => setAdminOpen(true)} style={{ padding: '6px 14px', backgroundColor: GOLD, color: '#fff', border: 'none', borderRadius: '999px', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', cursor: 'pointer', fontFamily: 'inherit' }}>

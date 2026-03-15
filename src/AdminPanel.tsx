@@ -104,82 +104,23 @@ export default function AdminPanel({ content, onSave, onClose }: Props) {
 
   const renderResume = () => (
     <div>
-      {/* Education */}
-      <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h4 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em' }}>EDUCATION</h4>
-          <button onClick={() => update('resume', 'education', [...draft.resume.education, { year: '', title: '', place: '', desc: '' }])}
-            style={{ padding: '6px 14px', backgroundColor: GOLD, color: '#fff', border: 'none', borderRadius: '999px', fontSize: '0.72rem', cursor: 'pointer' }}>+ Add</button>
-        </div>
-        {draft.resume.education.map((item, i) => (
-          <div key={i} style={{ backgroundColor: CREAM, borderRadius: '12px', padding: '1.2rem', marginBottom: '1rem', position: 'relative' }}>
-            <button onClick={() => update('resume', 'education', draft.resume.education.filter((_, j) => j !== i))}
-              style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '1rem' }}>✕</button>
-            {['year', 'title', 'place', 'desc'].map(field => (
-              <div key={field} style={{ marginBottom: '0.6rem' }}>
-                <label style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: '#888' }}>{field.toUpperCase()}</label>
-                <input value={(item as any)[field]} onChange={e => {
-                  const updated = [...draft.resume.education];
-                  (updated[i] as any)[field] = e.target.value;
-                  update('resume', 'education', updated);
-                }} style={{ display: 'block', width: '100%', padding: '7px 12px', border: `1px solid ${LIGHT_GOLD}`, borderRadius: '6px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', marginTop: '4px' }} />
-              </div>
-            ))}
-          </div>
-        ))}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h4 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em' }}>CORE LEADERSHIP STRENGTHS</h4>
+        <button onClick={() => update('resume', 'leadershipStrengths', [...draft.resume.leadershipStrengths, ''])}
+          style={{ padding: '6px 14px', backgroundColor: GOLD, color: '#fff', border: 'none', borderRadius: '999px', fontSize: '0.72rem', cursor: 'pointer' }}>+ Add</button>
       </div>
-
-      {/* Experience */}
-      <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h4 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em' }}>EXPERIENCE</h4>
-          <button onClick={() => update('resume', 'experience', [...draft.resume.experience, { year: '', title: '', place: '', desc: '' }])}
-            style={{ padding: '6px 14px', backgroundColor: GOLD, color: '#fff', border: 'none', borderRadius: '999px', fontSize: '0.72rem', cursor: 'pointer' }}>+ Add</button>
+      {draft.resume.leadershipStrengths.map((strength, i) => (
+        <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.6rem' }}>
+          <span style={{ color: GOLD, fontSize: '1rem', flexShrink: 0 }}>•</span>
+          <input value={strength} onChange={e => {
+            const u = [...draft.resume.leadershipStrengths];
+            u[i] = e.target.value;
+            update('resume', 'leadershipStrengths', u);
+          }} style={{ flex: 1, padding: '7px 12px', border: `1px solid ${LIGHT_GOLD}`, borderRadius: '6px', fontSize: '0.85rem', outline: 'none' }} />
+          <button onClick={() => update('resume', 'leadershipStrengths', draft.resume.leadershipStrengths.filter((_, j) => j !== i))}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '1rem', flexShrink: 0 }}>✕</button>
         </div>
-        {draft.resume.experience.map((item, i) => (
-          <div key={i} style={{ backgroundColor: CREAM, borderRadius: '12px', padding: '1.2rem', marginBottom: '1rem', position: 'relative' }}>
-            <button onClick={() => update('resume', 'experience', draft.resume.experience.filter((_, j) => j !== i))}
-              style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '1rem' }}>✕</button>
-            {['year', 'title', 'place', 'desc'].map(field => (
-              <div key={field} style={{ marginBottom: '0.6rem' }}>
-                <label style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: '#888' }}>{field.toUpperCase()}</label>
-                <input value={(item as any)[field]} onChange={e => {
-                  const updated = [...draft.resume.experience];
-                  (updated[i] as any)[field] = e.target.value;
-                  update('resume', 'experience', updated);
-                }} style={{ display: 'block', width: '100%', padding: '7px 12px', border: `1px solid ${LIGHT_GOLD}`, borderRadius: '6px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', marginTop: '4px' }} />
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-
-      {/* Skills */}
-      <div>
-        <h4 style={{ margin: '0 0 1rem', fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em' }}>SKILLS</h4>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
-          {draft.resume.skills.map((skill, i) => (
-            <span key={i} style={{ padding: '6px 14px', backgroundColor: LIGHT_GOLD, borderRadius: '999px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              {skill}
-              <button onClick={() => update('resume', 'skills', draft.resume.skills.filter((_, j) => j !== i))}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: 0, fontSize: '0.8rem' }}>✕</button>
-            </span>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <input id="newSkill" placeholder="Add a skill..." style={{ flex: 1, padding: '8px 14px', border: `1px solid ${LIGHT_GOLD}`, borderRadius: '8px', fontSize: '0.85rem', outline: 'none' }}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                const val = (e.target as HTMLInputElement).value.trim();
-                if (val) { update('resume', 'skills', [...draft.resume.skills, val]); (e.target as HTMLInputElement).value = ''; }
-              }
-            }} />
-          <button onClick={() => {
-            const el = document.getElementById('newSkill') as HTMLInputElement;
-            if (el?.value.trim()) { update('resume', 'skills', [...draft.resume.skills, el.value.trim()]); el.value = ''; }
-          }} style={{ padding: '8px 16px', backgroundColor: GOLD, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.78rem', cursor: 'pointer' }}>Add</button>
-        </div>
-      </div>
+      ))}
     </div>
   );
 
@@ -228,7 +169,7 @@ export default function AdminPanel({ content, onSave, onClose }: Props) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h4 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em' }}>RECOMMENDATIONS</h4>
-        <button onClick={() => update('recommendations', 'items', [...draft.recommendations.items, { name: '', role: '', quote: '' }])}
+        <button onClick={() => update('recommendations', 'items', [...draft.recommendations.items, { name: '', role: '', quote: '', link: '' }])}
           style={{ padding: '6px 14px', backgroundColor: GOLD, color: '#fff', border: 'none', borderRadius: '999px', fontSize: '0.72rem', cursor: 'pointer' }}>+ Add</button>
       </div>
       {draft.recommendations.items.map((item, i) => (
@@ -247,18 +188,65 @@ export default function AdminPanel({ content, onSave, onClose }: Props) {
               )}
             </div>
           ))}
+          {/* PDF / Link field */}
+          <div style={{ marginBottom: '0.6rem' }}>
+            <label style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: '#888' }}>LETTER OF RECOMMENDATION (PDF)</label>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '4px' }}>
+              <label style={{ cursor: 'pointer', padding: '7px 14px', border: `1.5px dashed ${LIGHT_GOLD}`, borderRadius: '6px', fontSize: '0.75rem', whiteSpace: 'nowrap', color: DARK }}>
+                {uploading === `rec-pdf-${i}` ? 'Uploading...' : '↑ Upload PDF'}
+                <input type="file" accept="application/pdf" style={{ display: 'none' }} onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadImage(`rec-pdf-${i}`, file, url => {
+                    const u = [...draft.recommendations.items];
+                    (u[i] as any).link = url;
+                    update('recommendations', 'items', u);
+                  });
+                }} />
+              </label>
+              <input value={(item as any).link || ''} onChange={e => { const u = [...draft.recommendations.items]; (u[i] as any).link = e.target.value; update('recommendations', 'items', u); }}
+                placeholder="or paste URL"
+                style={{ flex: 1, padding: '7px 12px', border: `1px solid ${LIGHT_GOLD}`, borderRadius: '6px', fontSize: '0.82rem', outline: 'none' }} />
+              {(item as any).link && (
+                <a href={(item as any).link} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.72rem', color: GOLD, whiteSpace: 'nowrap' }}>View</a>
+              )}
+            </div>
+          </div>
         </div>
       ))}
     </div>
   );
 
-  const renderContact = () => (
-    <div>
-      {input('Email', draft.contact.email, v => update('contact', 'email', v))}
-      {input('Phone', draft.contact.phone, v => update('contact', 'phone', v))}
-      {input('Location', draft.contact.location, v => update('contact', 'location', v))}
-    </div>
-  );
+  const renderContact = () => {
+    const socials = (draft.contact as any).socials ?? [];
+    return (
+      <div>
+        {input('Email', draft.contact.email, v => update('contact', 'email', v))}
+        {input('Phone', draft.contact.phone, v => update('contact', 'phone', v))}
+        {input('Location', draft.contact.location, v => update('contact', 'location', v))}
+
+        {/* Social Links */}
+        <div style={{ marginTop: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <label style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', color: '#888' }}>SOCIAL LINKS</label>
+            <button onClick={() => update('contact', 'socials', [...socials, { label: '', url: '' }])}
+              style={{ padding: '6px 14px', backgroundColor: GOLD, color: '#fff', border: 'none', borderRadius: '999px', fontSize: '0.72rem', cursor: 'pointer' }}>+ Add</button>
+          </div>
+          {socials.map((s: any, i: number) => (
+            <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.6rem' }}>
+              <input value={s.label} onChange={e => { const u = [...socials]; u[i].label = e.target.value; update('contact', 'socials', u); }}
+                placeholder="Label (e.g. LinkedIn)"
+                style={{ width: '120px', padding: '8px 12px', border: `1px solid ${LIGHT_GOLD}`, borderRadius: '6px', fontSize: '0.82rem', outline: 'none' }} />
+              <input value={s.url} onChange={e => { const u = [...socials]; u[i].url = e.target.value; update('contact', 'socials', u); }}
+                placeholder="https://..."
+                style={{ flex: 1, padding: '8px 12px', border: `1px solid ${LIGHT_GOLD}`, borderRadius: '6px', fontSize: '0.82rem', outline: 'none' }} />
+              <button onClick={() => update('contact', 'socials', socials.filter((_: any, j: number) => j !== i))}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '1rem', flexShrink: 0 }}>✕</button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   const renderTab = () => {
     switch (activeTab) {

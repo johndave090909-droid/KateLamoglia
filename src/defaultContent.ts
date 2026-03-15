@@ -19,15 +19,84 @@ export const defaultContent = {
     imageUrl: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&q=80',
   },
   resume: {
-    education: [
-      { year: '2022 – 2026', title: 'BS Marketing Management', place: 'De La Salle University', desc: "Dean's List 2024–2025. Focus on brand strategy and consumer behavior." },
-      { year: '2018 – 2022', title: 'Senior High School — STEM', place: 'Ateneo de Manila', desc: 'Graduated with honors. Active in student publications.' },
+    personalBrand: 'Hospitality & Tourism Management professional and dynamic culinary enabler with a record of standardizing flavor profiles, leading high-volume kitchen operations, and driving culinary innovation through cross-cultural menu development and strategic operational planning.',
+    leadershipStrengths: [
+      'Culinary Research & Recipe Development',
+      'Flavor Standardization & Menu Consistency',
+      'High-Volume Kitchen Operations',
+      'Culinary Innovation & Menu Design',
+      'Team Leadership & Cross-Department Coordination',
+      'Food Safety & Sanitation Compliance',
+      'Quality Control & Culinary Evaluation',
+      'Operational Efficiency & Workflow Optimization',
+      'Staff Training & Mentorship',
+      'Customer Experience & Food Presentation',
+      'Problem-Solving in Fast-Paced Environments',
+      'Organization, Time Management & Attention to Detail',
+    ],
+    accomplishments: [
+      {
+        title: 'Culinary Innovation & Flavor Standardization',
+        bullets: [
+          'Led recipe testing and flavor standardization initiatives to ensure consistent taste profiles and quality across diverse menu offerings.',
+          'Conducted structured tasting evaluations to refine recipes, improving scalability and consistency in high-volume operational kitchens.',
+        ],
+      },
+      {
+        title: 'Operational Leadership & Efficiency',
+        bullets: [
+          'Advanced into leadership responsibilities across five critical stations (Kitchen Pass, Expo, Prep, Production, and FOH) within the first year of employment.',
+          'Optimized service flow by coordinating real-time communication between kitchen and service teams during peak dining periods, maintaining high satisfaction levels.',
+        ],
+      },
+      {
+        title: 'Culinary Community & Professional Development',
+        bullets: [
+          'Served as President of the Culinary Club (BYU–Hawaii) for two semesters, organizing large-scale events and fostering a collaborative learning environment for hospitality students.',
+          'Managed precision preparation of fresh ahi for sushi production, maintaining zero-defect quality and presentation standards in a high-demand setting.',
+        ],
+      },
     ],
     experience: [
-      { year: 'Summer 2025', title: 'Marketing Intern', place: 'Vogue Philippines', desc: 'Assisted in digital campaign strategy, social media content planning, and editorial brand partnerships.' },
-      { year: 'Jan – May 2024', title: 'Brand Strategy Intern', place: 'Ayala Malls Group', desc: 'Conducted consumer research and contributed to quarterly brand positioning reports.' },
-      { year: '2023 – Present', title: 'Marketing Committee Head', place: 'DLSU Marketing Society', desc: 'Led a team of 12 in executing on-campus brand activation events.' },
+      {
+        title: 'Culinary Research & Development (R&D) Specialist',
+        company: 'Polynesian Cultural Center',
+        location: 'Laie, Hawaii',
+        period: 'March 2026 – Present',
+        bullets: [
+          'Lead culinary testing and evaluation processes to develop and refine menu items.',
+          'Establish flavor standards to ensure consistency across food production.',
+          'Analyze tasting panel feedback and adjust recipes to meet operational and quality standards.',
+          'Collaborate with culinary leadership to maintain menu integrity and support innovation.',
+        ],
+      },
+      {
+        title: 'Lead Cook',
+        company: 'Polynesian Cultural Center',
+        location: 'Laie, Hawaii',
+        period: 'February 2025 – February 2026',
+        bullets: [
+          'Operated across multiple culinary stations including Expo, Kitchen Pass, Prep Team, and Production Team in a high-volume hospitality environment.',
+          'Facilitated communication between kitchen and service teams to maintain efficient workflow during peak service periods.',
+          'Prepared and portioned fresh seafood ingredients with precision and consistency.',
+        ],
+      },
     ],
+    credentials: {
+      education: [
+        { degree: 'Bachelor of Science — Hospitality & Tourism Management', school: 'Brigham Young University–Hawaii', period: '2024 – Present' },
+        { degree: 'Humanities and Social Sciences', school: 'Our Lady of Fatima University', period: '' },
+      ],
+      certifications: [
+        'ServSafe Food Protection Manager Certification',
+        'Food Safety & Sanitation Certification',
+      ],
+      leadership: [
+        'President — Culinary Club, Brigham Young University–Hawaii (2 semesters)',
+        'Culinary Entrepreneurship & Menu Development Projects',
+        'Hospitality Operations & Restaurant Management Training',
+      ],
+    },
     skills: ['Brand Strategy', 'Content Marketing', 'Social Media', 'Consumer Research', 'Campaign Planning', 'Copywriting', 'Adobe Creative Suite', 'Canva', 'Google Analytics', 'Event Marketing', 'PR & Media Relations', 'Luxury Brand Management'],
   },
   portfolio: {
@@ -42,15 +111,19 @@ export const defaultContent = {
   },
   recommendations: {
     items: [
-      { name: 'Maria Santos', role: 'Editor-in-Chief, Vogue PH', quote: "Katriel's instinct for brand storytelling is rare for someone her age. She brought fresh perspective and executional excellence to every brief we gave her." },
-      { name: 'Prof. Ana Reyes', role: 'Marketing Chair, DLSU', quote: "One of the most driven students I've mentored. Her thesis on luxury brand positioning was among the best I've read in a decade of teaching." },
-      { name: 'Carlo Mendez', role: 'Brand Director, Ayala Malls', quote: "She consistently delivers thoughtful, data-backed recommendations. Her consumer research internship output exceeded expectations for a student her level." },
+      { name: 'Maria Santos', role: 'Editor-in-Chief, Vogue PH', quote: "Katriel's instinct for brand storytelling is rare for someone her age. She brought fresh perspective and executional excellence to every brief we gave her.", link: '' },
+      { name: 'Prof. Ana Reyes', role: 'Marketing Chair, DLSU', quote: "One of the most driven students I've mentored. Her thesis on luxury brand positioning was among the best I've read in a decade of teaching.", link: '' },
+      { name: 'Carlo Mendez', role: 'Brand Director, Ayala Malls', quote: "She consistently delivers thoughtful, data-backed recommendations. Her consumer research internship output exceeded expectations for a student her level.", link: '' },
     ],
   },
   contact: {
     email: 'katriel@email.com',
     phone: '+63 912 345 6789',
     location: 'Manila, Philippines',
+    socials: [
+      { label: 'LinkedIn', url: '' },
+      { label: 'Instagram', url: '' },
+    ],
   },
 };
 
