@@ -128,7 +128,7 @@ export default function AdminPanel({ content, onSave, onClose }: Props) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h4 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em' }}>PORTFOLIO ITEMS</h4>
-        <button onClick={() => update('portfolio', 'items', [...draft.portfolio.items, { title: '', tag: '', img: '' }])}
+        <button onClick={() => update('portfolio', 'items', [...draft.portfolio.items, { title: '', tag: '', img: '', link: '' }])}
           style={{ padding: '6px 14px', backgroundColor: GOLD, color: '#fff', border: 'none', borderRadius: '999px', fontSize: '0.72rem', cursor: 'pointer' }}>+ Add Item</button>
       </div>
       {draft.portfolio.items.map((item, i) => (
@@ -144,6 +144,11 @@ export default function AdminPanel({ content, onSave, onClose }: Props) {
             <label style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: '#888' }}>TAG</label>
             <input value={item.tag} onChange={e => { const u = [...draft.portfolio.items]; u[i].tag = e.target.value; update('portfolio', 'items', u); }}
               style={{ display: 'block', width: '100%', padding: '7px 12px', border: `1px solid ${LIGHT_GOLD}`, borderRadius: '6px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', marginTop: '4px' }} />
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: '#888' }}>LINK URL</label>
+            <input value={item.link ?? ''} onChange={e => { const u = [...draft.portfolio.items]; u[i].link = e.target.value; update('portfolio', 'items', u); }}
+              placeholder="https://..." style={{ display: 'block', width: '100%', padding: '7px 12px', border: `1px solid ${LIGHT_GOLD}`, borderRadius: '6px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', marginTop: '4px' }} />
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: '#888' }}>IMAGE</label>

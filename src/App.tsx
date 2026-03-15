@@ -224,18 +224,32 @@ function MarqueeRow({ items, direction, imgW, imgH, gap }: {
       <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '60px', background: 'linear-gradient(to right, #fff, transparent)', zIndex: 1, pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: '60px', background: 'linear-gradient(to left, #fff, transparent)', zIndex: 1, pointerEvents: 'none' }} />
       <div ref={innerRef} style={{ display: 'flex', gap: `${gap}px`, width: 'max-content', willChange: 'transform' }}>
-        {doubled.map((item, i) => (
-          <div key={i} style={{ position: 'relative', width: `${imgW}px`, height: `${imgH}px`, borderRadius: '10px', overflow: 'hidden', flexShrink: 0 }}
-            onMouseEnter={e => { const ov = e.currentTarget.querySelector('.mq-ov') as HTMLElement; if (ov) ov.style.opacity = '1'; }}
-            onMouseLeave={e => { const ov = e.currentTarget.querySelector('.mq-ov') as HTMLElement; if (ov) ov.style.opacity = '0'; }}>
-            <img src={item.img} alt={item.title} draggable={false}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', display: 'block' }} />
-            <div className="mq-ov" style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(28,28,28,0.72)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.25s', padding: '0 0.75rem', textAlign: 'center', pointerEvents: 'none' }}>
-              <p style={{ margin: '0 0 4px', fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.14em', color: GOLD }}>{(item.tag ?? '').toUpperCase()}</p>
-              <p style={{ margin: 0, fontFamily: "'Playfair Display', serif", fontSize: '0.85rem', color: '#fff', lineHeight: 1.3 }}>{item.title}</p>
-            </div>
-          </div>
-        ))}
+        {doubled.map((item, i) => {
+          const cardInner = (
+            <>
+              <img src={item.img} alt={item.title} draggable={false}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', display: 'block' }} />
+              <div className="mq-ov" style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(28,28,28,0.72)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.25s', padding: '0 0.75rem', textAlign: 'center', pointerEvents: 'none' }}>
+                <p style={{ margin: '0 0 4px', fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.14em', color: GOLD }}>{(item.tag ?? '').toUpperCase()}</p>
+                <p style={{ margin: 0, fontFamily: "'Playfair Display', serif", fontSize: '0.85rem', color: '#fff', lineHeight: 1.3 }}>{item.title}</p>
+                {item.link && <ExternalLink size={12} color="#fff" style={{ marginTop: '6px' }} />}
+              </div>
+            </>
+          );
+          const boxStyle: React.CSSProperties = { position: 'relative', width: `${imgW}px`, height: `${imgH}px`, borderRadius: '10px', overflow: 'hidden', flexShrink: 0, display: 'block', textDecoration: 'none' };
+          return item.link
+            ? <a key={i} href={item.link} target="_blank" rel="noopener noreferrer" style={boxStyle}
+                onMouseEnter={e => { const ov = e.currentTarget.querySelector('.mq-ov') as HTMLElement; if (ov) ov.style.opacity = '1'; }}
+                onMouseLeave={e => { const ov = e.currentTarget.querySelector('.mq-ov') as HTMLElement; if (ov) ov.style.opacity = '0'; }}
+                onMouseDown={e => e.stopPropagation()}>
+                {cardInner}
+              </a>
+            : <div key={i} style={boxStyle}
+                onMouseEnter={e => { const ov = e.currentTarget.querySelector('.mq-ov') as HTMLElement; if (ov) ov.style.opacity = '1'; }}
+                onMouseLeave={e => { const ov = e.currentTarget.querySelector('.mq-ov') as HTMLElement; if (ov) ov.style.opacity = '0'; }}>
+                {cardInner}
+              </div>;
+        })}
       </div>
     </div>
   );

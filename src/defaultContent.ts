@@ -101,12 +101,12 @@ export const defaultContent = {
   },
   portfolio: {
     items: [
-      { title: 'Vogue PH Digital Campaign', tag: 'Social Media', img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&q=80' },
-      { title: 'Luxury Brand Activation', tag: 'Event Marketing', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&q=80' },
-      { title: 'Consumer Insights Report', tag: 'Research', img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&q=80' },
-      { title: 'DLSU MktgSoc Launch', tag: 'Brand Identity', img: 'https://images.unsplash.com/photo-1529245856630-f4853233d2ea?w=500&q=80' },
-      { title: 'Ayala Malls Campaign', tag: 'Campaign Planning', img: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?w=500&q=80' },
-      { title: 'Editorial Lookbook', tag: 'Content Creation', img: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&q=80' },
+      { title: 'Vogue PH Digital Campaign', tag: 'Social Media', img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&q=80', link: '' },
+      { title: 'Luxury Brand Activation', tag: 'Event Marketing', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&q=80', link: '' },
+      { title: 'Consumer Insights Report', tag: 'Research', img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&q=80', link: '' },
+      { title: 'DLSU MktgSoc Launch', tag: 'Brand Identity', img: 'https://images.unsplash.com/photo-1529245856630-f4853233d2ea?w=500&q=80', link: '' },
+      { title: 'Ayala Malls Campaign', tag: 'Campaign Planning', img: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?w=500&q=80', link: '' },
+      { title: 'Editorial Lookbook', tag: 'Content Creation', img: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&q=80', link: '' },
     ],
   },
   recommendations: {
