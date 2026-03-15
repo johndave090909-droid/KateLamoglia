@@ -340,7 +340,7 @@ export default function App() {
 
   useEffect(() => { return onAuthStateChanged(auth, setUser); }, []);
 
-  const isAdmin = user && ADMIN_EMAILS.includes(user.email ?? '');
+  const isAdmin = user && ADMIN_EMAILS.map(e => e.toLowerCase()).includes((user.email ?? '').toLowerCase());
   const handleAdminLogin = () => signInWithPopup(auth, googleProvider);
 
   useEffect(() => {
