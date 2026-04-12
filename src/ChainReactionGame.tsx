@@ -1,42 +1,58 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { db } from './firebase';
+import {
+  doc, setDoc, onSnapshot, runTransaction, serverTimestamp,
+} from 'firebase/firestore';
 
 const ROWS = 9;
 const COLS = 6;
-const WAVE_DELAY = 180; // ms between explosion waves
+const WAVE_DELAY = 180;
 
 const PLAYER_COLORS = ['', '#c9a96e', '#e05c6e', '#6ea8c9'] as const;
 const PLAYER_GLOW   = ['', 'rgba(201,169,110,0.6)', 'rgba(224,92,110,0.6)', 'rgba(110,168,201,0.6)'] as const;
 const PLAYER_NAMES  = ['', 'Player 1', 'Player 2', 'Player 3'] as const;
 
-type Cell = { player: number; orbs: number };
-type Grid = Cell[][];
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-// ─── Pure helpers ────────────────────────────────────────────────────────────
+type Cell     = { player: number; orbs: number };
+type Grid     = Cell[][];
+type FlatCell = { p: number; o: number };
+
+interface GameDoc {
+  grid: FlatCell[];
+  currentPlayer: number;
+  activePlayers: number[];
+  hasPlayed: number[];
+  gameOver: boolean;
+  winner: number;
+  playerCount: number;
+  status: 'waiting' | 'playing' | 'finished';
+  slots: Record<string, boolean>; // "1" | "2" | "3"
+  createdAt: unknown;
+}
+
+// ─── Pure game helpers ────────────────────────────────────────────────────────
 
 const cloneGrid = (g: Grid): Grid => g.map(row => row.map(c => ({ ...c })));
-
 const createGrid = (): Grid =>
-  Array.from({ length: ROWS }, () =>
-    Array.from({ length: COLS }, () => ({ player: 0, orbs: 0 }))
-  );
+  Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => ({ player: 0, orbs: 0 })));
 
-const getCriticalMass = (row: number, col: number): number => {
+const getCriticalMass = (r: number, c: number): number => {
   let n = 4;
-  if (row === 0 || row === ROWS - 1) n--;
-  if (col === 0 || col === COLS - 1) n--;
+  if (r === 0 || r === ROWS - 1) n--;
+  if (c === 0 || c === COLS - 1) n--;
   return n;
 };
 
-const getNeighbors = (row: number, col: number): [number, number][] => {
+const getNeighbors = (r: number, c: number): [number, number][] => {
   const n: [number, number][] = [];
-  if (row > 0)        n.push([row - 1, col]);
-  if (row < ROWS - 1) n.push([row + 1, col]);
-  if (col > 0)        n.push([row, col - 1]);
-  if (col < COLS - 1) n.push([row, col + 1]);
+  if (r > 0)        n.push([r - 1, c]);
+  if (r < ROWS - 1) n.push([r + 1, c]);
+  if (c > 0)        n.push([r, c - 1]);
+  if (c < COLS - 1) n.push([r, c + 1]);
   return n;
 };
 
-/** Returns orb count per player: { 1: n, 2: n, 3: n } */
 const countOrbsByPlayer = (g: Grid): Record<number, number> => {
   const counts: Record<number, number> = {};
   for (const row of g)
@@ -46,11 +62,10 @@ const countOrbsByPlayer = (g: Grid): Record<number, number> => {
   return counts;
 };
 
-/** Returns every intermediate grid state: placement + one state per explosion wave. */
 const computeWaves = (grid: Grid, r0: number, c0: number, player: number): Grid[] => {
   const states: Grid[] = [];
   let cur = cloneGrid(grid);
-  cur[r0][c0].orbs += 1;
+  cur[r0][c0].orbs  += 1;
   cur[r0][c0].player = player;
   states.push(cloneGrid(cur));
 
@@ -59,7 +74,6 @@ const computeWaves = (grid: Grid, r0: number, c0: number, player: number): Grid[
     for (let r = 0; r < ROWS; r++)
       for (let c = 0; c < COLS; c++)
         if (cur[r][c].orbs >= getCriticalMass(r, c)) boom.push([r, c]);
-
     if (boom.length === 0) break;
 
     const next = cloneGrid(cur);
@@ -68,7 +82,7 @@ const computeWaves = (grid: Grid, r0: number, c0: number, player: number): Grid[
       next[r][c].orbs -= crit;
       if (next[r][c].orbs === 0) next[r][c].player = 0;
       for (const [nr, nc] of getNeighbors(r, c)) {
-        next[nr][nc].orbs += 1;
+        next[nr][nc].orbs  += 1;
         next[nr][nc].player = player;
       }
     }
@@ -77,6 +91,29 @@ const computeWaves = (grid: Grid, r0: number, c0: number, player: number): Grid[
   }
   return states;
 };
+
+// ─── Firestore serialization ──────────────────────────────────────────────────
+
+const gridToFlat = (grid: Grid): FlatCell[] =>
+  grid.flat().map(c => ({ p: c.player, o: c.orbs }));
+
+const flatToGrid = (flat: FlatCell[]): Grid =>
+  Array.from({ length: ROWS }, (_, r) =>
+    flat.slice(r * COLS, (r + 1) * COLS).map(c => ({ player: c.p, orbs: c.o }))
+  );
+
+// ─── Session persistence (survives page refresh) ──────────────────────────────
+
+const SESSION_KEY = 'cr_session_v1';
+interface Session { gameId: string; slot: number }
+
+const getSession  = (): Session | null => {
+  try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? 'null'); }
+  catch { return null; }
+};
+const saveSession  = (s: Session) => sessionStorage.setItem(SESSION_KEY, JSON.stringify(s));
+const clearSession = () => sessionStorage.removeItem(SESSION_KEY);
+const genId        = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
 // ─── Orb display ─────────────────────────────────────────────────────────────
 
@@ -90,25 +127,19 @@ const ORB_POSITIONS: [number, number][][] = [
 
 const OrbDisplay: React.FC<{ count: number; color: string; size: number }> = ({ count, color, size }) => {
   const capped  = Math.min(count, 4);
-  const pos     = ORB_POSITIONS[capped];
   const dotSize = size <= 44 ? 8 : size <= 54 ? 10 : 12;
-
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
-      {pos.map(([x, y], i) => (
-        <div
-          key={i}
-          className="orb-dot"
-          style={{
-            position: 'absolute',
-            left: `${x}%`, top: `${y}%`,
-            transform: 'translate(-50%, -50%)',
-            width: dotSize, height: dotSize,
-            borderRadius: '50%',
-            background: color,
-            boxShadow: `0 0 ${dotSize - 2}px ${color}`,
-          }}
-        />
+      {ORB_POSITIONS[capped].map(([x, y], i) => (
+        <div key={i} className="orb-dot" style={{
+          position: 'absolute',
+          left: `${x}%`, top: `${y}%`,
+          transform: 'translate(-50%,-50%)',
+          width: dotSize, height: dotSize,
+          borderRadius: '50%',
+          background: color,
+          boxShadow: `0 0 ${dotSize - 2}px ${color}`,
+        }} />
       ))}
       {count > 4 && (
         <div style={{
@@ -123,22 +154,33 @@ const OrbDisplay: React.FC<{ count: number; color: string; size: number }> = ({ 
   );
 };
 
-// ─── Main game component ──────────────────────────────────────────────────────
+// ─── Main component ───────────────────────────────────────────────────────────
 
 const ChainReactionGame: React.FC = () => {
-  const [playerCount, setPlayerCount] = useState<2 | 3>(2);
-  const [grid, setGrid]               = useState<Grid>(createGrid);
-  const [currentPlayer, setCurrentPlayer] = useState<number>(1);
-  const [activePlayers, setActivePlayers] = useState<number[]>([1, 2]);
-  const [hasPlayed, setHasPlayed]     = useState<Set<number>>(new Set());
-  const [gameOver, setGameOver]       = useState(false);
-  const [winner, setWinner]           = useState(0);
-  const [animating, setAnimating]     = useState(false);
-  const [exploding, setExploding]     = useState<Set<string>>(new Set());
-  const [hovered, setHovered]         = useState<string | null>(null);
-  const [windowW, setWindowW]         = useState(window.innerWidth);
+  // Navigation / lobby state
+  const [view, setView]       = useState<'lobby' | 'waiting' | 'game'>('lobby');
+  const [gameId, setGameId]   = useState('');
+  const [mySlot, setMySlot]   = useState(0);
+  const [gameDoc, setGameDoc] = useState<GameDoc | null>(null);
+  const [joinInput, setJoinInput] = useState('');
+  const [pcInput, setPcInput] = useState<2 | 3>(2);
+  const [error, setError]     = useState('');
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied]   = useState(false);
 
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // Board / animation state
+  const [localGrid, setLocalGrid] = useState<Grid>(createGrid);
+  const [animating, setAnimating] = useState(false);
+  const [exploding, setExploding] = useState<Set<string>>(new Set());
+  const [hovered, setHovered]     = useState<string | null>(null);
+  const [windowW, setWindowW]     = useState(window.innerWidth);
+
+  const timersRef  = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const animRef    = useRef(false);
+  const unsubRef   = useRef<(() => void) | null>(null);
+
+  // Keep animRef in sync
+  useEffect(() => { animRef.current = animating; }, [animating]);
 
   useEffect(() => {
     const onResize = () => setWindowW(window.innerWidth);
@@ -146,67 +188,202 @@ const ChainReactionGame: React.FC = () => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  // Restore session on mount
+  useEffect(() => {
+    const s = getSession();
+    if (s) restoreSession(s);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => () => { clearTimers(); unsubRef.current?.(); }, []);
+
   const clearTimers = () => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => clearTimers, []);
-
   const cellSize = Math.min(Math.floor((windowW - 48) / COLS), 64);
 
-  const finalise = useCallback((finalGrid: Grid, player: number, curActive: number[], curHasPlayed: Set<number>) => {
-    const newHasPlayed = new Set([...curHasPlayed, player]);
-    setHasPlayed(newHasPlayed);
+  // ─── Firestore subscription ─────────────────────────────────────────────────
 
-    const orbCounts = countOrbsByPlayer(finalGrid);
+  const subscribeToGame = (gid: string, slot: number) => {
+    unsubRef.current?.();
+    const ref = doc(db, 'games', gid);
+    unsubRef.current = onSnapshot(ref, snap => {
+      if (!snap.exists()) return;
+      const data = snap.data() as GameDoc;
+      setGameDoc(data);
 
-    // Only start eliminating once every player has placed at least one orb
-    const allHavePlayedOnce = curActive.every(p => newHasPlayed.has(p));
+      // Other players' moves: sync grid when not animating
+      if (data.currentPlayer !== slot && !animRef.current) {
+        setLocalGrid(flatToGrid(data.grid));
+      }
 
-    const newActive = allHavePlayedOnce
-      ? curActive.filter(p => (orbCounts[p] ?? 0) > 0)
-      : [...curActive];
+      // Transition views based on status
+      if (data.status === 'playing' || data.status === 'finished') {
+        setLocalGrid(flatToGrid(data.grid));
+        setView('game');
+      }
+    });
+  };
 
-    setActivePlayers(newActive);
+  const restoreSession = (s: Session) => {
+    setGameId(s.gameId);
+    setMySlot(s.slot);
+    subscribeToGame(s.gameId, s.slot);
+  };
 
-    if (newActive.length === 1) {
-      setWinner(newActive[0]);
-      setGameOver(true);
-      return;
+  // ─── Lobby actions ──────────────────────────────────────────────────────────
+
+  const createGame = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const gid = genId();
+      const slots: Record<string, boolean> = {};
+      for (let i = 1; i <= pcInput; i++) slots[String(i)] = i === 1;
+
+      const initial: GameDoc = {
+        grid: gridToFlat(createGrid()),
+        currentPlayer: 1,
+        activePlayers: Array.from({ length: pcInput }, (_, i) => i + 1),
+        hasPlayed: [],
+        gameOver: false,
+        winner: 0,
+        playerCount: pcInput,
+        status: 'waiting',
+        slots,
+        createdAt: serverTimestamp(),
+      };
+
+      await setDoc(doc(db, 'games', gid), initial);
+      const session = { gameId: gid, slot: 1 };
+      saveSession(session);
+      setGameId(gid);
+      setMySlot(1);
+      subscribeToGame(gid, 1);
+      setView('waiting');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to create game');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Advance to next player in the (possibly reduced) active list
-    const idx      = newActive.indexOf(player);
-    const nextIdx  = idx === -1 ? 0 : (idx + 1) % newActive.length;
-    setCurrentPlayer(newActive[nextIdx]);
-  }, []);
+  const joinGame = async () => {
+    const code = joinInput.trim().toUpperCase();
+    if (!code) { setError('Enter a game code'); return; }
+    setError('');
+    setLoading(true);
+    try {
+      const ref = doc(db, 'games', code);
+      let assignedSlot = 0;
 
-  const handleClick = useCallback((r: number, c: number) => {
-    if (animating || gameOver) return;
-    const cell = grid[r][c];
-    if (cell.player !== 0 && cell.player !== currentPlayer) return;
+      await runTransaction(db, async tx => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) throw new Error('Game not found');
+        const data = snap.data() as GameDoc;
+        if (data.status === 'finished') throw new Error('That game is already over');
 
-    const waves = computeWaves(grid, r, c, currentPlayer);
+        for (let s = 1; s <= data.playerCount; s++) {
+          if (!data.slots[String(s)]) { assignedSlot = s; break; }
+        }
+        if (assignedSlot === 0) throw new Error('Game is full');
+
+        const newSlots = { ...data.slots, [String(assignedSlot)]: true };
+        const allFilled = Object.values(newSlots).every(Boolean);
+        tx.update(ref, { slots: newSlots, ...(allFilled ? { status: 'playing' } : {}) });
+      });
+
+      const session = { gameId: code, slot: assignedSlot };
+      saveSession(session);
+      setGameId(code);
+      setMySlot(assignedSlot);
+      subscribeToGame(code, assignedSlot);
+      setView('waiting');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to join game');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const leaveGame = () => {
+    clearTimers();
+    clearSession();
+    unsubRef.current?.();
+    unsubRef.current = null;
+    setGameId(''); setMySlot(0); setGameDoc(null);
+    setLocalGrid(createGrid()); setView('lobby');
+    setError(''); setJoinInput('');
+  };
+
+  const copyCode = () => {
+    navigator.clipboard.writeText(gameId).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  // ─── Game move ──────────────────────────────────────────────────────────────
+
+  const handleClick = useCallback(async (r: number, c: number) => {
+    if (!gameDoc || animating || gameDoc.gameOver) return;
+    if (gameDoc.currentPlayer !== mySlot) return;
+
+    const cell = localGrid[r][c];
+    if (cell.player !== 0 && cell.player !== mySlot) return;
+
+    const startGrid = flatToGrid(gameDoc.grid);
+    const waves     = computeWaves(startGrid, r, c, mySlot);
+    const finalGrid = waves[waves.length - 1];
+
+    // Compute resulting game state
+    const newHasPlayed   = Array.from(new Set([...gameDoc.hasPlayed, mySlot]));
+    const orbCounts      = countOrbsByPlayer(finalGrid);
+    const allStarted     = gameDoc.activePlayers.every(p => newHasPlayed.includes(p));
+    const newActive      = allStarted
+      ? gameDoc.activePlayers.filter(p => (orbCounts[p] ?? 0) > 0)
+      : [...gameDoc.activePlayers];
+    const won            = newActive.length === 1;
+    const newWinner      = won ? newActive[0] : 0;
+    const idx            = newActive.indexOf(mySlot);
+    const nextPlayer     = won ? 0 : newActive[(idx === -1 ? 0 : idx + 1) % newActive.length];
+
+    const writeMove = async () => {
+      try {
+        await runTransaction(db, async tx => {
+          const snap = await tx.get(doc(db, 'games', gameId));
+          if (!snap.exists()) return;
+          if ((snap.data() as GameDoc).currentPlayer !== mySlot) return; // race guard
+          tx.update(doc(db, 'games', gameId), {
+            grid: gridToFlat(finalGrid),
+            currentPlayer: nextPlayer,
+            activePlayers: newActive,
+            hasPlayed: newHasPlayed,
+            gameOver: won,
+            winner: newWinner,
+            status: won ? 'finished' : 'playing',
+          });
+        });
+      } catch (e) {
+        console.error('Move write failed:', e);
+      }
+    };
+
     clearTimers();
 
-    // Capture current active/hasPlayed for closure
-    const snapActive    = activePlayers;
-    const snapHasPlayed = hasPlayed;
-
     if (waves.length === 1) {
-      setGrid(waves[0]);
-      finalise(waves[0], currentPlayer, snapActive, snapHasPlayed);
+      setLocalGrid(finalGrid);
+      await writeMove();
       return;
     }
 
     setAnimating(true);
-
     waves.forEach((waveGrid, i) => {
-      const t = setTimeout(() => {
-        setGrid(waveGrid);
-
+      const t = setTimeout(async () => {
+        setLocalGrid(waveGrid);
         if (i < waves.length - 1) {
           const ex = new Set<string>();
           for (let row = 0; row < ROWS; row++)
@@ -217,110 +394,188 @@ const ChainReactionGame: React.FC = () => {
         } else {
           setExploding(new Set());
           setAnimating(false);
-          finalise(waveGrid, currentPlayer, snapActive, snapHasPlayed);
+          await writeMove();
         }
       }, i * WAVE_DELAY);
-
       timersRef.current.push(t);
     });
-  }, [grid, currentPlayer, gameOver, animating, activePlayers, hasPlayed, finalise]);
+  }, [gameDoc, localGrid, mySlot, animating, gameId]);
 
-  const startNewGame = (count: 2 | 3 = playerCount) => {
-    clearTimers();
-    const players = Array.from({ length: count }, (_, i) => i + 1);
-    setPlayerCount(count);
-    setGrid(createGrid());
-    setCurrentPlayer(1);
-    setActivePlayers(players);
-    setHasPlayed(new Set());
-    setGameOver(false);
-    setWinner(0);
-    setAnimating(false);
-    setExploding(new Set());
-  };
+  // ─── Render helpers ──────────────────────────────────────────────────────────
 
-  return (
+  const wrap = (children: React.ReactNode) => (
     <div style={{
-      minHeight: '100vh',
-      background: '#1c1c1c',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      fontFamily: 'Montserrat, sans-serif',
-      color: '#f5f0e8',
-      padding: '28px 16px 40px',
-      boxSizing: 'border-box',
+      minHeight: '100vh', background: '#1c1c1c',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      fontFamily: 'Montserrat, sans-serif', color: '#f5f0e8',
+      padding: '28px 16px 40px', boxSizing: 'border-box',
     }}>
-
-      {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: 16 }}>
-        <a href="/" style={{
-          color: '#c9a96e', textDecoration: 'none',
-          fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.6,
-        }}>
+      <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        <a href="/" style={{ color: '#c9a96e', textDecoration: 'none', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.6 }}>
           ← Portfolio
         </a>
-        <h1 style={{
-          fontFamily: 'Cormorant Garamond, serif',
-          fontSize: 'clamp(26px, 5vw, 40px)',
-          fontWeight: 300, color: '#c9a96e',
-          margin: '6px 0 0', letterSpacing: '0.06em',
-        }}>
+        <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 'clamp(26px,5vw,40px)', fontWeight: 300, color: '#c9a96e', margin: '6px 0 0', letterSpacing: '0.06em' }}>
           Chain Reaction
         </h1>
       </div>
+      {children}
+      <style>{GAME_CSS}</style>
+    </div>
+  );
 
-      {/* Player count selector */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-        {([2, 3] as const).map(n => (
-          <button
-            key={n}
-            onClick={() => startNewGame(n)}
-            style={{
-              padding: '5px 18px',
-              background: playerCount === n ? '#c9a96e22' : 'transparent',
-              border: `1px solid ${playerCount === n ? '#c9a96e' : '#c9a96e44'}`,
-              color: playerCount === n ? '#c9a96e' : '#c9a96e88',
-              borderRadius: 4,
-              cursor: 'pointer',
-              fontSize: 11,
-              letterSpacing: '0.1em',
-              fontFamily: 'Montserrat, sans-serif',
+  // ─── Lobby ───────────────────────────────────────────────────────────────────
+
+  if (view === 'lobby') return wrap(
+    <div style={{ width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* Create */}
+      <div style={card}>
+        <Label>Create Game</Label>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          {([2, 3] as const).map(n => (
+            <button key={n} onClick={() => setPcInput(n)} style={{
+              flex: 1, padding: '8px',
+              background: pcInput === n ? '#c9a96e22' : 'transparent',
+              border: `1px solid ${pcInput === n ? '#c9a96e' : '#444'}`,
+              color: pcInput === n ? '#c9a96e' : '#777',
+              borderRadius: 4, cursor: 'pointer', fontSize: 11,
+              letterSpacing: '0.08em', fontFamily: 'Montserrat, sans-serif',
               transition: 'all 0.2s',
-            }}
-          >
-            {n} Players
-          </button>
-        ))}
+            }}>
+              {n} Players
+            </button>
+          ))}
+        </div>
+        <GoldButton onClick={createGame} disabled={loading}>
+          {loading ? 'Creating…' : 'Create Game'}
+        </GoldButton>
       </div>
 
+      <Divider />
+
+      {/* Join */}
+      <div style={card}>
+        <Label>Join Game</Label>
+        <input
+          value={joinInput}
+          onChange={e => setJoinInput(e.target.value.toUpperCase())}
+          onKeyDown={e => e.key === 'Enter' && joinGame()}
+          placeholder="GAME CODE"
+          maxLength={6}
+          style={{
+            width: '100%', padding: '10px 12px', marginBottom: 12,
+            background: '#1c1c1c', border: '1px solid #444',
+            color: '#f5f0e8', borderRadius: 4, fontSize: 14,
+            letterSpacing: '0.22em', textAlign: 'center',
+            fontFamily: 'Montserrat, sans-serif', boxSizing: 'border-box',
+            outline: 'none',
+          }}
+        />
+        <OutlineButton onClick={joinGame} disabled={loading}>
+          {loading ? 'Joining…' : 'Join Game'}
+        </OutlineButton>
+      </div>
+
+      {error && <p style={{ textAlign: 'center', color: '#e05c6e', fontSize: 12, margin: 0 }}>{error}</p>}
+    </div>
+  );
+
+  // ─── Waiting room ─────────────────────────────────────────────────────────────
+
+  if (view === 'waiting') {
+    const slots  = gameDoc?.slots ?? {};
+    const pc     = gameDoc?.playerCount ?? pcInput;
+    const filled = Object.values(slots).filter(Boolean).length;
+    return wrap(
+      <div style={{ width: '100%', maxWidth: 340, textAlign: 'center' }}>
+        <div style={{ ...card, marginBottom: 16 }}>
+          <p style={{ fontSize: 10, opacity: 0.4, letterSpacing: '0.14em', textTransform: 'uppercase', margin: '0 0 10px' }}>
+            Game Code
+          </p>
+          <div style={{ fontSize: 34, letterSpacing: '0.3em', fontWeight: 700, color: '#c9a96e', margin: '0 0 12px' }}>
+            {gameId}
+          </div>
+          <button onClick={copyCode} style={{
+            padding: '6px 18px', background: 'transparent',
+            border: '1px solid #c9a96e44', color: '#c9a96e88',
+            borderRadius: 4, cursor: 'pointer', fontSize: 10,
+            letterSpacing: '0.1em', fontFamily: 'Montserrat, sans-serif',
+          }}>
+            {copied ? '✓ Copied' : 'Copy Code'}
+          </button>
+
+          <div style={{ margin: '24px 0 10px', display: 'flex', justifyContent: 'center', gap: 16 }}>
+            {Array.from({ length: pc }, (_, i) => i + 1).map(s => (
+              <div key={s} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                <div style={{
+                  width: 14, height: 14, borderRadius: '50%',
+                  background: slots[String(s)] ? PLAYER_COLORS[s as 1|2|3] : '#333',
+                  boxShadow: slots[String(s)] ? `0 0 10px ${PLAYER_COLORS[s as 1|2|3]}` : 'none',
+                  transition: 'all 0.3s',
+                }} />
+                <span style={{ fontSize: 9, opacity: slots[String(s)] ? 0.7 : 0.3, letterSpacing: '0.06em' }}>
+                  {PLAYER_NAMES[s as 1|2|3]}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <p style={{ fontSize: 11, opacity: 0.4, margin: '0', letterSpacing: '0.04em' }}>
+            {filled}/{pc} joined — waiting for {pc - filled} more…
+          </p>
+        </div>
+
+        <p style={{ fontSize: 11, opacity: 0.35, marginBottom: 16 }}>
+          You are{' '}
+          <span style={{ color: PLAYER_COLORS[mySlot as 1|2|3], fontWeight: 600 }}>
+            {PLAYER_NAMES[mySlot as 1|2|3]}
+          </span>
+        </p>
+
+        <button onClick={leaveGame} style={{
+          padding: '8px 24px', background: 'transparent',
+          border: '1px solid #444', color: '#666',
+          borderRadius: 4, cursor: 'pointer', fontSize: 10,
+          letterSpacing: '0.1em', fontFamily: 'Montserrat, sans-serif',
+        }}>
+          Leave
+        </button>
+      </div>
+    );
+  }
+
+  // ─── Game board ───────────────────────────────────────────────────────────────
+
+  const isMyTurn = gameDoc?.currentPlayer === mySlot && !gameDoc?.gameOver;
+
+  return wrap(
+    <>
       {/* Player indicators */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap', justifyContent: 'center' }}>
-        {Array.from({ length: playerCount }, (_, i) => i + 1).map(p => {
-          const isActive   = currentPlayer === p && !gameOver;
-          const eliminated = !activePlayers.includes(p) && hasPlayed.has(p);
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+        {Array.from({ length: gameDoc?.playerCount ?? 2 }, (_, i) => i + 1).map(p => {
+          const active     = gameDoc?.currentPlayer === p && !gameDoc?.gameOver;
+          const eliminated = gameDoc ? !gameDoc.activePlayers.includes(p) && gameDoc.hasPlayed.includes(p) : false;
           return (
             <div key={p} style={{
               display: 'flex', alignItems: 'center', gap: 8,
-              padding: '7px 16px', borderRadius: 6,
-              border: `1px solid ${isActive ? PLAYER_COLORS[p] : 'transparent'}`,
-              background: isActive ? `${PLAYER_GLOW[p]}28` : 'transparent',
+              padding: '7px 14px', borderRadius: 6,
+              border: `1px solid ${active ? PLAYER_COLORS[p as 1|2|3] : 'transparent'}`,
+              background: active ? `${PLAYER_GLOW[p as 1|2|3]}28` : 'transparent',
               opacity: eliminated ? 0.25 : 1,
               transition: 'all 0.25s ease',
-              position: 'relative',
             }}>
               <div style={{
                 width: 11, height: 11, borderRadius: '50%',
-                background: PLAYER_COLORS[p],
-                boxShadow: isActive ? `0 0 10px ${PLAYER_COLORS[p]}` : 'none',
+                background: PLAYER_COLORS[p as 1|2|3],
+                boxShadow: active ? `0 0 10px ${PLAYER_COLORS[p as 1|2|3]}` : 'none',
                 transition: 'box-shadow 0.25s',
               }} />
               <span style={{
-                fontSize: 12, letterSpacing: '0.08em',
-                opacity: isActive ? 1 : 0.4, transition: 'opacity 0.25s',
+                fontSize: 11, letterSpacing: '0.06em',
+                opacity: active ? 1 : 0.4,
                 textDecoration: eliminated ? 'line-through' : 'none',
               }}>
-                {PLAYER_NAMES[p]}
+                {PLAYER_NAMES[p as 1|2|3]}{p === mySlot ? ' (you)' : ''}
               </span>
             </div>
           );
@@ -331,22 +586,18 @@ const ChainReactionGame: React.FC = () => {
       <div style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${COLS}, ${cellSize}px)`,
-        gap: 3,
-        background: '#232323',
-        padding: 5,
-        borderRadius: 10,
+        gap: 3, background: '#232323', padding: 5,
+        borderRadius: 10, border: '1px solid #2e2e2e',
         boxShadow: '0 12px 48px rgba(0,0,0,0.55)',
-        border: '1px solid #2e2e2e',
       }}>
-        {grid.map((row, r) => row.map((cell, c) => {
-          const key       = `${r},${c}`;
-          const critMass  = getCriticalMass(r, c);
-          const isExplode = exploding.has(key);
-          const isHovered = hovered === key;
-          const canClick  = !animating && !gameOver
-            && (cell.player === 0 || cell.player === currentPlayer);
-          const color     = cell.player ? PLAYER_COLORS[cell.player as 1|2|3] : '#555';
-          const danger    = cell.orbs >= critMass - 1 && cell.orbs > 0;
+        {localGrid.map((row, r) => row.map((cell, c) => {
+          const key      = `${r},${c}`;
+          const crit     = getCriticalMass(r, c);
+          const isExplod = exploding.has(key);
+          const isHov    = hovered === key;
+          const canClick = isMyTurn && !animating && (cell.player === 0 || cell.player === mySlot);
+          const color    = cell.player ? PLAYER_COLORS[cell.player as 1|2|3] : '#555';
+          const danger   = cell.orbs >= crit - 1 && cell.orbs > 0;
 
           return (
             <div
@@ -354,160 +605,172 @@ const ChainReactionGame: React.FC = () => {
               onClick={() => handleClick(r, c)}
               onMouseEnter={() => canClick && setHovered(key)}
               onMouseLeave={() => setHovered(null)}
-              className={isExplode ? 'cell-explode' : ''}
+              className={isExplod ? 'cell-explode' : ''}
               style={{
-                width: cellSize, height: cellSize,
-                borderRadius: 4,
-                position: 'relative',
-                cursor: canClick ? 'pointer' : 'default',
+                width: cellSize, height: cellSize, borderRadius: 4,
+                position: 'relative', cursor: canClick ? 'pointer' : 'default',
                 boxSizing: 'border-box',
-                background: isExplode
-                  ? `${PLAYER_COLORS[currentPlayer as 1|2|3]}55`
+                background: isExplod
+                  ? `${PLAYER_COLORS[mySlot as 1|2|3]}55`
                   : cell.player
                     ? `${PLAYER_COLORS[cell.player as 1|2|3]}14`
-                    : isHovered ? '#2d2d2d' : '#262626',
+                    : isHov ? '#2d2d2d' : '#262626',
                 border: `1px solid ${
-                  isExplode
-                    ? PLAYER_COLORS[currentPlayer as 1|2|3]
+                  isExplod
+                    ? PLAYER_COLORS[mySlot as 1|2|3]
                     : cell.player
                       ? `${PLAYER_COLORS[cell.player as 1|2|3]}${danger ? '99' : '44'}`
-                      : isHovered
-                        ? `${PLAYER_COLORS[currentPlayer as 1|2|3]}55`
-                        : '#303030'
+                      : isHov ? `${PLAYER_COLORS[mySlot as 1|2|3]}55` : '#303030'
                 }`,
                 transition: 'background 0.1s, border-color 0.15s',
               }}
             >
-              {cell.orbs > 0 && (
-                <OrbDisplay count={cell.orbs} color={color} size={cellSize} />
-              )}
-              <div style={{
-                position: 'absolute', bottom: 2, right: 3,
-                fontSize: 8, opacity: 0.18, lineHeight: 1, userSelect: 'none',
-              }}>
-                {critMass}
+              {cell.orbs > 0 && <OrbDisplay count={cell.orbs} color={color} size={cellSize} />}
+              <div style={{ position: 'absolute', bottom: 2, right: 3, fontSize: 8, opacity: 0.18, lineHeight: 1, userSelect: 'none' }}>
+                {crit}
               </div>
             </div>
           );
         }))}
       </div>
 
-      {/* Status */}
-      <div style={{ marginTop: 14, fontSize: 11, opacity: 0.4, letterSpacing: '0.1em', minHeight: 16 }}>
+      {/* Status bar */}
+      <div style={{ marginTop: 14, fontSize: 11, letterSpacing: '0.1em', minHeight: 18, textAlign: 'center' }}>
         {animating
-          ? 'CHAIN REACTION…'
-          : gameOver
-            ? ''
-            : `${PLAYER_NAMES[currentPlayer as 1|2|3]}'S TURN`}
+          ? <span style={{ opacity: 0.4 }}>CHAIN REACTION…</span>
+          : gameDoc?.gameOver ? null
+          : isMyTurn
+            ? <span style={{ color: PLAYER_COLORS[mySlot as 1|2|3] }}>YOUR TURN</span>
+            : <span style={{ opacity: 0.4 }}>
+                {PLAYER_NAMES[(gameDoc?.currentPlayer ?? 1) as 1|2|3]}'S TURN
+              </span>
+        }
       </div>
 
-      {/* New Game button */}
-      <button
-        onClick={() => startNewGame()}
-        style={{
-          marginTop: 14,
-          padding: '9px 28px',
-          background: 'transparent',
-          border: '1px solid #c9a96e55',
-          color: '#c9a96e',
-          borderRadius: 4,
-          cursor: 'pointer',
-          fontSize: 11,
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-          fontFamily: 'Montserrat, sans-serif',
-          transition: 'background 0.2s, border-color 0.2s',
-        }}
-        onMouseOver={e => { e.currentTarget.style.background = '#c9a96e1a'; e.currentTarget.style.borderColor = '#c9a96e'; }}
-        onMouseOut={e =>  { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#c9a96e55'; }}
-      >
-        New Game
+      <button onClick={leaveGame} style={{
+        marginTop: 14, padding: '8px 24px', background: 'transparent',
+        border: '1px solid #c9a96e44', color: '#c9a96e', borderRadius: 4,
+        cursor: 'pointer', fontSize: 10, letterSpacing: '0.12em',
+        textTransform: 'uppercase', fontFamily: 'Montserrat, sans-serif',
+      }}>
+        Leave Game
       </button>
 
-      {/* How to play */}
-      <div style={{
-        marginTop: 22, maxWidth: 340,
-        fontSize: 11, opacity: 0.32, lineHeight: 1.8,
-        textAlign: 'center', letterSpacing: '0.04em',
-      }}>
-        Click any empty cell or your own to place an orb. When a cell reaches its
-        critical mass (corner=2, edge=3, center=4) it explodes — sending orbs to
-        neighbors and converting them to your color. Last player with orbs wins.
+      <div style={{ marginTop: 20, maxWidth: 340, fontSize: 11, opacity: 0.28, lineHeight: 1.8, textAlign: 'center', letterSpacing: '0.04em' }}>
+        Click your cells to place orbs. Critical mass (corner=2, edge=3, center=4)
+        triggers explosions, converting neighbors. Last player standing wins.
       </div>
 
       {/* Win overlay */}
-      {gameOver && winner > 0 && (
+      {gameDoc?.gameOver && gameDoc.winner > 0 && (
         <div style={{
-          position: 'fixed', inset: 0,
-          background: 'rgba(20,20,20,0.92)',
+          position: 'fixed', inset: 0, background: 'rgba(20,20,20,0.92)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           zIndex: 200, backdropFilter: 'blur(10px)',
         }}>
           <div style={{
-            textAlign: 'center', padding: '48px 56px',
-            background: '#222', borderRadius: 12,
-            border: `1px solid ${PLAYER_COLORS[winner as 1|2|3]}55`,
-            boxShadow: `0 24px 64px rgba(0,0,0,0.6), 0 0 48px ${PLAYER_GLOW[winner as 1|2|3]}`,
+            textAlign: 'center', padding: '48px 56px', background: '#222',
+            borderRadius: 12,
+            border: `1px solid ${PLAYER_COLORS[gameDoc.winner as 1|2|3]}55`,
+            boxShadow: `0 24px 64px rgba(0,0,0,0.6), 0 0 48px ${PLAYER_GLOW[gameDoc.winner as 1|2|3]}`,
           }}>
             <div style={{
               width: 22, height: 22, borderRadius: '50%',
-              background: PLAYER_COLORS[winner as 1|2|3],
+              background: PLAYER_COLORS[gameDoc.winner as 1|2|3],
               margin: '0 auto 20px',
-              boxShadow: `0 0 24px ${PLAYER_COLORS[winner as 1|2|3]}`,
+              boxShadow: `0 0 24px ${PLAYER_COLORS[gameDoc.winner as 1|2|3]}`,
               animation: 'orbPulse 1.2s ease-in-out infinite',
             }} />
             <h2 style={{
-              fontFamily: 'Cormorant Garamond, serif',
-              fontSize: 38, fontWeight: 300,
-              color: PLAYER_COLORS[winner as 1|2|3],
-              margin: '0 0 6px',
+              fontFamily: 'Cormorant Garamond, serif', fontSize: 38, fontWeight: 300,
+              color: PLAYER_COLORS[gameDoc.winner as 1|2|3], margin: '0 0 6px',
             }}>
-              {PLAYER_NAMES[winner as 1|2|3]} Wins
+              {gameDoc.winner === mySlot ? 'You Win!' : `${PLAYER_NAMES[gameDoc.winner as 1|2|3]} Wins`}
             </h2>
-            <p style={{
-              fontSize: 10, opacity: 0.45, letterSpacing: '0.16em',
-              margin: '0 0 32px', textTransform: 'uppercase',
-            }}>
+            <p style={{ fontSize: 10, opacity: 0.45, letterSpacing: '0.16em', margin: '0 0 32px', textTransform: 'uppercase' }}>
               Chain Reaction Complete
             </p>
-            <button
-              onClick={() => startNewGame()}
-              style={{
-                padding: '12px 40px',
-                background: PLAYER_COLORS[winner as 1|2|3],
-                border: 'none', color: '#1c1c1c',
-                borderRadius: 4, cursor: 'pointer',
-                fontSize: 11, letterSpacing: '0.14em',
-                textTransform: 'uppercase', fontWeight: 700,
-                fontFamily: 'Montserrat, sans-serif',
-              }}
-            >
-              Play Again
+            <button onClick={leaveGame} style={{
+              padding: '12px 40px', background: PLAYER_COLORS[gameDoc.winner as 1|2|3],
+              border: 'none', color: '#1c1c1c', borderRadius: 4, cursor: 'pointer',
+              fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase',
+              fontWeight: 700, fontFamily: 'Montserrat, sans-serif',
+            }}>
+              Back to Lobby
             </button>
           </div>
         </div>
       )}
-
-      <style>{`
-        .cell-explode { animation: cellBurst 0.18s ease-out; }
-        .orb-dot      { animation: orbPop 0.2s cubic-bezier(.17,.67,.46,1.4) both; }
-        @keyframes cellBurst {
-          0%  { transform: scale(1);    }
-          45% { transform: scale(1.18); }
-          100%{ transform: scale(1);    }
-        }
-        @keyframes orbPop {
-          0%  { transform: translate(-50%,-50%) scale(0);    opacity: 0; }
-          60% { transform: translate(-50%,-50%) scale(1.25);             }
-          100%{ transform: translate(-50%,-50%) scale(1);    opacity: 1; }
-        }
-        @keyframes orbPulse {
-          0%,100%{ transform: scale(1);    opacity: 1;    }
-          50%    { transform: scale(1.35); opacity: 0.75; }
-        }
-      `}</style>
-    </div>
+    </>
   );
 };
+
+// ─── Shared UI atoms ──────────────────────────────────────────────────────────
+
+const card: React.CSSProperties = {
+  background: '#222', borderRadius: 10,
+  padding: '24px', border: '1px solid #2e2e2e',
+};
+
+const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <p style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.45, margin: '0 0 14px' }}>
+    {children}
+  </p>
+);
+
+const GoldButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ children, ...props }) => (
+  <button {...props} style={{
+    width: '100%', padding: '11px', background: '#c9a96e',
+    border: 'none', color: '#1c1c1c', borderRadius: 4,
+    cursor: props.disabled ? 'wait' : 'pointer', fontSize: 11,
+    letterSpacing: '0.12em', textTransform: 'uppercase',
+    fontWeight: 700, fontFamily: 'Montserrat, sans-serif',
+    opacity: props.disabled ? 0.6 : 1,
+  }}>
+    {children}
+  </button>
+);
+
+const OutlineButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ children, ...props }) => (
+  <button {...props} style={{
+    width: '100%', padding: '11px', background: 'transparent',
+    border: '1px solid #c9a96e88', color: '#c9a96e', borderRadius: 4,
+    cursor: props.disabled ? 'wait' : 'pointer', fontSize: 11,
+    letterSpacing: '0.12em', textTransform: 'uppercase',
+    fontFamily: 'Montserrat, sans-serif', opacity: props.disabled ? 0.6 : 1,
+    transition: 'all 0.2s',
+  }}>
+    {children}
+  </button>
+);
+
+const Divider: React.FC = () => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div style={{ flex: 1, height: 1, background: '#2e2e2e' }} />
+    <span style={{ fontSize: 10, opacity: 0.3, letterSpacing: '0.1em' }}>OR</span>
+    <div style={{ flex: 1, height: 1, background: '#2e2e2e' }} />
+  </div>
+);
+
+const GAME_CSS = `
+  .cell-explode { animation: cellBurst 0.18s ease-out; }
+  .orb-dot      { animation: orbPop 0.2s cubic-bezier(.17,.67,.46,1.4) both; }
+  @keyframes cellBurst {
+    0%  { transform: scale(1);    }
+    45% { transform: scale(1.18); }
+    100%{ transform: scale(1);    }
+  }
+  @keyframes orbPop {
+    0%  { transform: translate(-50%,-50%) scale(0);    opacity: 0; }
+    60% { transform: translate(-50%,-50%) scale(1.25);             }
+    100%{ transform: translate(-50%,-50%) scale(1);    opacity: 1; }
+  }
+  @keyframes orbPulse {
+    0%,100%{ transform: scale(1);    opacity: 1;    }
+    50%    { transform: scale(1.35); opacity: 0.75; }
+  }
+  input::placeholder { opacity: 0.3; letter-spacing: 0.1em; }
+  input:focus { border-color: #c9a96e88 !important; }
+`;
 
 export default ChainReactionGame;
