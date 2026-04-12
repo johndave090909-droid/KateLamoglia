@@ -62,6 +62,9 @@ const countOrbsByPlayer = (g: Grid): Record<number, number> => {
   return counts;
 };
 
+const MAX_WAVES = 500; // hard safety cap
+const MAX_ANIM_FRAMES = 30; // max setTimeout calls queued for animation
+
 const computeWaves = (grid: Grid, r0: number, c0: number, player: number): Grid[] => {
   const states: Grid[] = [];
   let cur = cloneGrid(grid);
@@ -69,7 +72,7 @@ const computeWaves = (grid: Grid, r0: number, c0: number, player: number): Grid[
   cur[r0][c0].player = player;
   states.push(cloneGrid(cur));
 
-  for (;;) {
+  for (let iter = 0; iter < MAX_WAVES; iter++) {
     const boom: [number, number][] = [];
     for (let r = 0; r < ROWS; r++)
       for (let c = 0; c < COLS; c++)
@@ -90,6 +93,17 @@ const computeWaves = (grid: Grid, r0: number, c0: number, player: number): Grid[
     states.push(cloneGrid(cur));
   }
   return states;
+};
+
+/** Down-sample waves to at most MAX_ANIM_FRAMES entries, always keeping first and last. */
+const sampleWaves = (waves: Grid[]): Grid[] => {
+  if (waves.length <= MAX_ANIM_FRAMES) return waves;
+  const step = (waves.length - 1) / (MAX_ANIM_FRAMES - 1);
+  const out: Grid[] = [];
+  for (let i = 0; i < MAX_ANIM_FRAMES - 1; i++)
+    out.push(waves[Math.round(i * step)]);
+  out.push(waves[waves.length - 1]); // always include final state
+  return out;
 };
 
 // ─── Firestore serialization ──────────────────────────────────────────────────
@@ -335,9 +349,10 @@ const ChainReactionGame: React.FC = () => {
     const cell = localGrid[r][c];
     if (cell.player !== 0 && cell.player !== mySlot) return;
 
-    const startGrid = flatToGrid(gameDoc.grid);
-    const waves     = computeWaves(startGrid, r, c, mySlot);
-    const finalGrid = waves[waves.length - 1];
+    const startGrid  = flatToGrid(gameDoc.grid);
+    const waves      = computeWaves(startGrid, r, c, mySlot);
+    const finalGrid  = waves[waves.length - 1];
+    const animFrames = sampleWaves(waves);
 
     // Compute resulting game state
     const newHasPlayed   = Array.from(new Set([...gameDoc.hasPlayed, mySlot]));
@@ -381,10 +396,10 @@ const ChainReactionGame: React.FC = () => {
     }
 
     setAnimating(true);
-    waves.forEach((waveGrid, i) => {
+    animFrames.forEach((waveGrid, i) => {
       const t = setTimeout(async () => {
         setLocalGrid(waveGrid);
-        if (i < waves.length - 1) {
+        if (i < animFrames.length - 1) {
           const ex = new Set<string>();
           for (let row = 0; row < ROWS; row++)
             for (let col = 0; col < COLS; col++)
