@@ -129,19 +129,34 @@ const saveSession  = (s: Session) => sessionStorage.setItem(SESSION_KEY, JSON.st
 const clearSession = () => sessionStorage.removeItem(SESSION_KEY);
 const genId        = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
-// ─── Orb display ─────────────────────────────────────────────────────────────
+// ─── Orb display (3D spheres) ─────────────────────────────────────────────────
 
 const ORB_POSITIONS: [number, number][][] = [
   [],
   [[50, 50]],
-  [[30, 50], [70, 50]],
-  [[50, 28], [28, 68], [72, 68]],
-  [[28, 28], [72, 28], [28, 72], [72, 72]],
+  [[31, 50], [69, 50]],
+  [[50, 28], [27, 68], [73, 68]],
+  [[27, 27], [73, 27], [27, 73], [73, 73]],
 ];
 
-const OrbDisplay: React.FC<{ count: number; color: string; size: number }> = ({ count, color, size }) => {
-  const capped  = Math.min(count, 4);
-  const dotSize = size <= 44 ? 8 : size <= 54 ? 10 : 12;
+// Radial gradients: bright highlight → mid → deep shadow
+const SPHERE_GRADIENT = [
+  '',
+  'radial-gradient(circle at 36% 30%, #faebd0, #c9a96e 52%, #5c3508)',
+  'radial-gradient(circle at 36% 30%, #ffb8c0, #e05c6e 52%, #6a0715)',
+  'radial-gradient(circle at 36% 30%, #b8e0f8, #6ea8c9 52%, #0e3d5a)',
+] as const;
+
+const SPHERE_GLOW = ['', '#c9a96e', '#e05c6e', '#6ea8c9'] as const;
+
+const OrbDisplay: React.FC<{ count: number; player: number; size: number }> = ({ count, player, size }) => {
+  const capped   = Math.min(count, 4);
+  const gradient = SPHERE_GRADIENT[player as 1|2|3] ?? SPHERE_GRADIENT[1];
+  const glow     = SPHERE_GLOW[player as 1|2|3] ?? SPHERE_GLOW[1];
+  // Scale orb to ~50% cell for 1 orb, ~36% for 2, ~30% for 3+
+  const pct      = capped === 1 ? 0.50 : capped === 2 ? 0.38 : 0.30;
+  const dotSize  = Math.max(8, Math.round(size * pct));
+
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
       {ORB_POSITIONS[capped].map(([x, y], i) => (
@@ -151,15 +166,16 @@ const OrbDisplay: React.FC<{ count: number; color: string; size: number }> = ({ 
           transform: 'translate(-50%,-50%)',
           width: dotSize, height: dotSize,
           borderRadius: '50%',
-          background: color,
-          boxShadow: `0 0 ${dotSize - 2}px ${color}`,
+          background: gradient,
+          boxShadow: `0 2px 6px rgba(0,0,0,0.7), 0 0 ${Math.round(dotSize * 0.5)}px ${glow}88`,
         }} />
       ))}
       {count > 4 && (
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color, fontSize: 13, fontWeight: 700, fontFamily: 'Montserrat, sans-serif',
+          color: glow, fontSize: 13, fontWeight: 700, fontFamily: 'Montserrat, sans-serif',
+          textShadow: `0 0 8px ${glow}`,
         }}>
           {count}
         </div>
@@ -420,7 +436,7 @@ const ChainReactionGame: React.FC = () => {
 
   const wrap = (children: React.ReactNode) => (
     <div style={{
-      minHeight: '100vh', background: '#1c1c1c',
+      minHeight: '100vh', background: '#050505',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       fontFamily: 'Montserrat, sans-serif', color: '#f5f0e8',
       padding: '28px 16px 40px', boxSizing: 'border-box',
@@ -597,56 +613,62 @@ const ChainReactionGame: React.FC = () => {
         })}
       </div>
 
-      {/* Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${COLS}, ${cellSize}px)`,
-        gap: 3, background: '#232323', padding: 5,
-        borderRadius: 10, border: '1px solid #2e2e2e',
-        boxShadow: '0 12px 48px rgba(0,0,0,0.55)',
-      }}>
-        {localGrid.map((row, r) => row.map((cell, c) => {
-          const key      = `${r},${c}`;
-          const crit     = getCriticalMass(r, c);
-          const isExplod = exploding.has(key);
-          const isHov    = hovered === key;
-          const canClick = isMyTurn && !animating && (cell.player === 0 || cell.player === mySlot);
-          const color    = cell.player ? PLAYER_COLORS[cell.player as 1|2|3] : '#555';
-          const danger   = cell.orbs >= crit - 1 && cell.orbs > 0;
+      {/* 3D perspective wrapper */}
+      <div style={{ perspective: '560px', perspectiveOrigin: '50% -20px' }}>
+        <div style={{ transform: 'rotateX(22deg)', transformOrigin: 'top center', transformStyle: 'preserve-3d' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${COLS}, ${cellSize}px)`,
+            gap: 3,
+            background: '#3a0000',
+            padding: 5,
+            borderRadius: 6,
+            boxShadow: '0 24px 64px rgba(0,0,0,0.9), 0 4px 24px rgba(180,0,0,0.35)',
+            border: '1px solid #5a0000',
+          }}>
+            {localGrid.map((row, r) => row.map((cell, c) => {
+              const key      = `${r},${c}`;
+              const crit     = getCriticalMass(r, c);
+              const isExplod = exploding.has(key);
+              const isHov    = hovered === key;
+              const canClick = isMyTurn && !animating && (cell.player === 0 || cell.player === mySlot);
+              const danger   = cell.orbs >= crit - 1 && cell.orbs > 0;
+              const pColor   = cell.player ? PLAYER_COLORS[cell.player as 1|2|3] : null;
 
-          return (
-            <div
-              key={key}
-              onClick={() => handleClick(r, c)}
-              onMouseEnter={() => canClick && setHovered(key)}
-              onMouseLeave={() => setHovered(null)}
-              className={isExplod ? 'cell-explode' : ''}
-              style={{
-                width: cellSize, height: cellSize, borderRadius: 4,
-                position: 'relative', cursor: canClick ? 'pointer' : 'default',
-                boxSizing: 'border-box',
-                background: isExplod
-                  ? `${PLAYER_COLORS[mySlot as 1|2|3]}55`
-                  : cell.player
-                    ? `${PLAYER_COLORS[cell.player as 1|2|3]}14`
-                    : isHov ? '#2d2d2d' : '#262626',
-                border: `1px solid ${
-                  isExplod
-                    ? PLAYER_COLORS[mySlot as 1|2|3]
-                    : cell.player
-                      ? `${PLAYER_COLORS[cell.player as 1|2|3]}${danger ? '99' : '44'}`
-                      : isHov ? `${PLAYER_COLORS[mySlot as 1|2|3]}55` : '#303030'
-                }`,
-                transition: 'background 0.1s, border-color 0.15s',
-              }}
-            >
-              {cell.orbs > 0 && <OrbDisplay count={cell.orbs} color={color} size={cellSize} />}
-              <div style={{ position: 'absolute', bottom: 2, right: 3, fontSize: 8, opacity: 0.18, lineHeight: 1, userSelect: 'none' }}>
-                {crit}
-              </div>
-            </div>
-          );
-        }))}
+              return (
+                <div
+                  key={key}
+                  onClick={() => handleClick(r, c)}
+                  onMouseEnter={() => canClick && setHovered(key)}
+                  onMouseLeave={() => setHovered(null)}
+                  className={`game-cell${isExplod ? ' cell-explode' : ''}`}
+                  style={{
+                    width: cellSize, height: cellSize,
+                    position: 'relative', cursor: canClick ? 'pointer' : 'default',
+                    boxSizing: 'border-box',
+                    background: isExplod
+                      ? `radial-gradient(ellipse at 40% 35%, ${PLAYER_COLORS[mySlot as 1|2|3]}55, #1a0000)`
+                      : pColor
+                        ? `radial-gradient(ellipse at 30% 25%, ${pColor}28, #0a0202)`
+                        : isHov
+                          ? `radial-gradient(ellipse at 30% 25%, ${PLAYER_COLORS[mySlot as 1|2|3]}18, #110303)`
+                          : '#080202',
+                    borderTop:    `1px solid ${isExplod ? '#ff4444' : pColor ? `${pColor}${danger ? 'cc' : '55'}` : '#280000'}`,
+                    borderLeft:   `1px solid ${isExplod ? '#ff4444' : pColor ? `${pColor}${danger ? 'cc' : '55'}` : '#280000'}`,
+                    borderBottom: `1px solid ${isExplod ? '#ff6666' : pColor ? `${pColor}${danger ? 'ff' : '88'}` : '#480000'}`,
+                    borderRight:  `1px solid ${isExplod ? '#ff6666' : pColor ? `${pColor}${danger ? 'ff' : '88'}` : '#480000'}`,
+                    transition: 'background 0.1s',
+                  }}
+                >
+                  {cell.orbs > 0 && <OrbDisplay count={cell.orbs} player={cell.player} size={cellSize} />}
+                  <div style={{ position: 'absolute', bottom: 2, right: 3, fontSize: 7, opacity: 0.2, lineHeight: 1, userSelect: 'none', color: '#ff6666' }}>
+                    {crit}
+                  </div>
+                </div>
+              );
+            }))}
+          </div>
+        </div>
       </div>
 
       {/* Status bar */}
@@ -723,8 +745,8 @@ const ChainReactionGame: React.FC = () => {
 // ─── Shared UI atoms ──────────────────────────────────────────────────────────
 
 const card: React.CSSProperties = {
-  background: '#222', borderRadius: 10,
-  padding: '24px', border: '1px solid #2e2e2e',
+  background: '#0e0202', borderRadius: 10,
+  padding: '24px', border: '1px solid #2a0000',
 };
 
 const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -768,21 +790,46 @@ const Divider: React.FC = () => (
 );
 
 const GAME_CSS = `
+  /* 3D cell walls via pseudo-elements */
+  .game-cell { overflow: visible !important; }
+
+  .game-cell::after {
+    content: '';
+    position: absolute;
+    left: calc(100% + 0px);
+    top: 2px;
+    width: 3px;
+    height: calc(100% + 1px);
+    background: linear-gradient(to bottom, #5a0000, #200000);
+    pointer-events: none;
+  }
+  .game-cell::before {
+    content: '';
+    position: absolute;
+    top: calc(100% + 0px);
+    left: 2px;
+    height: 3px;
+    width: calc(100% + 1px);
+    background: linear-gradient(to right, #5a0000, #200000);
+    pointer-events: none;
+  }
+
   .cell-explode { animation: cellBurst 0.18s ease-out; }
-  .orb-dot      { animation: orbPop 0.2s cubic-bezier(.17,.67,.46,1.4) both; }
+  .orb-dot      { animation: orbPop 0.22s cubic-bezier(.17,.67,.46,1.4) both; }
+
   @keyframes cellBurst {
-    0%  { transform: scale(1);    }
-    45% { transform: scale(1.18); }
-    100%{ transform: scale(1);    }
+    0%  { transform: scale(1);    filter: brightness(1);   }
+    40% { transform: scale(1.15); filter: brightness(2.2); }
+    100%{ transform: scale(1);    filter: brightness(1);   }
   }
   @keyframes orbPop {
     0%  { transform: translate(-50%,-50%) scale(0);    opacity: 0; }
-    60% { transform: translate(-50%,-50%) scale(1.25);             }
+    60% { transform: translate(-50%,-50%) scale(1.3);              }
     100%{ transform: translate(-50%,-50%) scale(1);    opacity: 1; }
   }
   @keyframes orbPulse {
     0%,100%{ transform: scale(1);    opacity: 1;    }
-    50%    { transform: scale(1.35); opacity: 0.75; }
+    50%    { transform: scale(1.4);  opacity: 0.75; }
   }
   input::placeholder { opacity: 0.3; letter-spacing: 0.1em; }
   input:focus { border-color: #c9a96e88 !important; }
