@@ -635,6 +635,35 @@ export default function App() {
         </div>
       </section>
 
+      {/* BLOG REVIEW */}
+      <section style={{ padding: isMobile ? '60px 5%' : '100px 8%', backgroundColor: CREAM }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <p style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.22em', color: GOLD, marginBottom: '0.8rem', textAlign: 'center' }}>FOOD REVIEW</p>
+          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? '1.7rem' : '2.4rem', fontWeight: 400, margin: '0 0 2rem', textAlign: 'center', lineHeight: 1.3 }}>
+            The KAIN Review: SF's Most Authentic "Fast" Flavor
+          </h2>
+
+          {/* Images */}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem', marginBottom: '2.5rem' }}>
+            <img src="/kain-lumpia-turon-ube.jpeg" alt="KAIN Lumpia, Turon, and Ube Custard" style={{ width: '100%', borderRadius: '16px', objectFit: 'cover', aspectRatio: '4/3' }} />
+            <img src="/kain-adobo-bowl.jpeg" alt="KAIN Adobo Bowl" style={{ width: '100%', borderRadius: '16px', objectFit: 'cover', aspectRatio: '4/3' }} />
+          </div>
+
+          {/* Review body */}
+          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? '1.05rem' : '1.15rem', color: '#444', lineHeight: 1.85 }}>
+            <p>You know that mid-afternoon slump in the city where you're just wandering the Mission, starving, and every "fast" option feels like a compromise? Bestie, stop settling for that bland, overpriced sandwich just because it's convenient. You deserve a lunch that actually has a soul. I finally found the solution to your SF hustle at <strong>KAIN</strong>, and honestly, it's the life-hack your schedule has been begging for.</p>
+
+            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: isMobile ? '1.2rem' : '1.45rem', fontWeight: 400, color: DARK, margin: '2rem 0 0.8rem' }}>The Lumpia &amp; Turon</h3>
+            <p>Let's talk about the crunch that literally stops traffic. The Lumpia here is exactly what you've been craving—shatteringly crisp on the outside and packed with savory, seasoned filling that isn't just "filler." But the real secret weapon? The <strong>Turon</strong>. Most places serve them soggy, but KAIN's brown sugar glaze is perfectly caramelized and golden. It's that nostalgic, home-cooked flavor pyramid: traditional roots at the base, premium execution in the middle, and total convenience at the top.</p>
+
+            <p>Then there's the <strong>Ube Custard</strong>, and honestly, it's a total main-character moment. It's velvety, vibrant, and has that deep, earthy sweetness that proves they aren't using artificial shortcuts. When you're walking back to the office with this in your hand, you aren't just another commuter; you're the hero who found the best dessert in SF. You're the one who didn't just "get lunch"—you curated an experience that makes your whole day feel like an upgrade.</p>
+
+            <p>The reality is that word is getting out, and the bed of nails is that these Ube cups and crispy Turon rolls are selling out fast. Don't be the one stuck eating a sad granola bar at your desk while everyone else is buzzing about this. You need to get out of the "maybe later" hammock and get moving. Tap the link below to check the live stock and order your Ube Custard for pickup before they're gone for the day!</p>
+          </div>
+
+        </div>
+      </section>
+
       {/* CONTACT */}
       <section ref={(el) => { sectionRefs.current['CONTACT'] = el; }} id="CONTACT"
         style={{ padding: isMobile ? '60px 5%' : '100px 8%', backgroundColor: '#fff' }}>

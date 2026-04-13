@@ -129,39 +129,75 @@ const saveSession  = (s: Session) => sessionStorage.setItem(SESSION_KEY, JSON.st
 const clearSession = () => sessionStorage.removeItem(SESSION_KEY);
 const genId        = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
-// ─── Orb display ─────────────────────────────────────────────────────────────
+// ─── Orb display (cluster rotate) ────────────────────────────────────────────
 
-const ORB_POSITIONS: [number, number][][] = [
-  [],
-  [[50, 50]],
-  [[30, 50], [70, 50]],
-  [[50, 28], [28, 68], [72, 68]],
-  [[28, 28], [72, 28], [28, 72], [72, 72]],
-];
+// Rotation period in seconds per orb count — more orbs = faster spin
+const ORBIT_PERIOD = [0, 0, 1.8, 1.0, 0.55];
+
+// Positions within the cluster, centered at (0,0).
+// 1: center. 2: side by side. 3: triangle. 4: 2×2.
+const clusterOffsets = (count: number, gap: number): [number, number][] => {
+  switch (count) {
+    case 1:  return [[0, 0]];
+    case 2:  return [[-gap, 0], [gap, 0]];
+    case 3:  return [
+      [0, -gap],
+      [-gap * 0.87,  gap * 0.5],
+      [ gap * 0.87,  gap * 0.5],
+    ];
+    default: return [
+      [-gap, -gap], [gap, -gap],
+      [-gap,  gap], [gap,  gap],
+    ];
+  }
+};
 
 const OrbDisplay: React.FC<{ count: number; player: number; size: number }> = ({ count, player, size }) => {
-  const capped  = Math.min(count, 4);
   const color   = PLAYER_COLORS[player as 1|2|3] ?? PLAYER_COLORS[1];
   const dotSize = size <= 44 ? 8 : size <= 54 ? 10 : 12;
+  const gap     = dotSize * 0.75;
+  const capped  = Math.min(count, 4);
+  const period  = ORBIT_PERIOD[capped] ?? 0.55;
+  const rotate  = capped >= 2;
+  const offsets = clusterOffsets(capped, gap);
 
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
-      {ORB_POSITIONS[capped].map(([x, y], i) => (
-        <div key={i} className="orb-dot" style={{
+      {/* All orbs in one wrapper so they rotate together as a cluster */}
+      <div
+        className={rotate ? 'orb-orbit' : ''}
+        style={{
           position: 'absolute',
-          left: `${x}%`, top: `${y}%`,
-          transform: 'translate(-50%,-50%)',
-          width: dotSize, height: dotSize,
-          borderRadius: '50%',
-          background: color,
-          boxShadow: `0 0 ${dotSize - 2}px ${color}`,
-        }} />
-      ))}
+          left: '50%',
+          top: '50%',
+          width: 0,
+          height: 0,
+          transformOrigin: '0 0',
+          animationDuration: rotate ? `${period}s` : undefined,
+        }}
+      >
+        {offsets.map(([dx, dy], i) => (
+          <div
+            key={i}
+            className="orb-dot"
+            style={{
+              position: 'absolute',
+              left: dx - dotSize / 2,
+              top:  dy - dotSize / 2,
+              width: dotSize,
+              height: dotSize,
+              borderRadius: '50%',
+              background: color,
+              boxShadow: `0 0 ${dotSize - 2}px ${color}`,
+            }}
+          />
+        ))}
+      </div>
       {count > 4 && (
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color, fontSize: 13, fontWeight: 700, fontFamily: 'Montserrat, sans-serif',
+          color, fontSize: 12, fontWeight: 700, fontFamily: 'Montserrat, sans-serif',
         }}>
           {count}
         </div>
@@ -769,17 +805,31 @@ const Divider: React.FC = () => (
 );
 
 const GAME_CSS = `
+  /* Orbit wrapper spins — duration set inline per orb count */
+  .orb-orbit {
+    animation: orbOrbit linear infinite;
+  }
+
+  /* Orb pops in when first placed */
+  .orb-dot {
+    animation: orbPop 0.18s cubic-bezier(.17,.67,.46,1.4) both;
+  }
+
   .cell-explode { animation: cellBurst 0.18s ease-out; }
-  .orb-dot      { animation: orbPop 0.2s cubic-bezier(.17,.67,.46,1.4) both; }
+
+  @keyframes orbOrbit {
+    from { transform: rotate(0deg);   }
+    to   { transform: rotate(360deg); }
+  }
   @keyframes cellBurst {
     0%  { transform: scale(1);    }
     45% { transform: scale(1.18); }
     100%{ transform: scale(1);    }
   }
   @keyframes orbPop {
-    0%  { transform: translate(-50%,-50%) scale(0);    opacity: 0; }
-    60% { transform: translate(-50%,-50%) scale(1.25);             }
-    100%{ transform: translate(-50%,-50%) scale(1);    opacity: 1; }
+    0%  { transform: scale(0);    opacity: 0; }
+    60% { transform: scale(1.25);             }
+    100%{ transform: scale(1);    opacity: 1; }
   }
   @keyframes orbPulse {
     0%,100%{ transform: scale(1);    opacity: 1;    }
